@@ -4,6 +4,7 @@ const pool = require('../../database/database')
 const passwordHash = require('password-hash')
 
 
+
 //GET ALL User
 router.get('/', (req, res)=>{
     pool.query("SELECT * FROM user",[],(error, results,field)=>{
