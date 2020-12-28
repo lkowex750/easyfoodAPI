@@ -57,8 +57,7 @@ router.post('/',upload.single('postImage'),(req,res,next)=>{
 
 
 router.get('/',(req,res)=>{
-    
-    
+ 
     pool.query("SELECT * FROM post",[],(error,results,field)=>{
         return res.json({
             data: results

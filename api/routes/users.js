@@ -2,12 +2,21 @@ const express = require('express')
 const router = express.Router()
 const pool = require('../../database/database')
 const passwordHash = require('password-hash')
+const mergeJSON = require('merge-json')
+const multer = require('multer')
 
 
 
 //GET ALL User
-router.get('/', (req, res)=>{
-    pool.query("SELECT * FROM user",[],(error, results,field)=>{
+router.get('/:uID', (req, res)=>{
+    let id = req.params.uID
+    pool.query("SELECT * FROM user WHERE user_ID = ?",[id],(error, results,field)=>{
+        if(results ==""){
+            return res.json({
+                success: 0,
+                message: "no-data"
+            })
+        }
         if(error){
             return res.json({
                 success: 0,
@@ -16,7 +25,7 @@ router.get('/', (req, res)=>{
         }
         return res.json({
             success: 1,
-            data: results
+            data: results[0]
         })
     })
 })
@@ -34,7 +43,7 @@ router.post('/login',(req,res)=>{
                 message: error
             })
         }
-        //console.log(results[0])
+        
         if(results[0] == null){
             return res.json({
                 success: 0,
@@ -57,11 +66,7 @@ router.post('/login',(req,res)=>{
             })
         })
   
-    })
-
-
-    
-   
+    })  
 })
 
 /*
@@ -99,6 +104,101 @@ router.post('/signup',(req,res)=>{
         })
         
         
+    })
+})
+/*
+Update user profile & cancel profile
+{"fullName:": "","nickName":""}
+*/ 
+router.post('/edit',(req,res)=>{
+    let id = req.body.uid
+    let body = req.body
+
+    pool.query("SELECT * FROM user WHERE user_ID = ?",[id],(err,results,field)=>{
+       let oldData = results[0]
+       if(results == ""){
+           return res.json({
+               success: 0,
+               message: "nodata"
+           })
+       }
+       let jsonOldData = JSON.parse(JSON.stringify(oldData))
+
+       let newData = mergeJSON.merge(jsonOldData, body)
+       pool.query("UPDATE `user` SET `fullName` = ?, `nickName` = ?, `status`= ? WHERE `user_ID` = ?",[newData.fullName,newData.nickName,newData.status,id],(error,results,fields)=>{
+            if(error){
+                return res.json({
+                    success: 0,
+                    message: error
+                })
+            }
+            return res.json({
+                success: 1,
+                message : "Update success"
+
+            })
+       })
+    })
+})
+
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb){
+        cb(null, 'uploadProfile/')
+    },
+    filename: function(req, file, cb){
+        cb(null, new Date().toISOString().replace(/:|\./g,'') + '-' + file.originalname);
+    }
+})
+
+const fileFilter = (req, file , cb ) =>{
+    if(file.mimetype === 'image/png' || file.mimetype === 'image/jpeg'){
+        cb(null,true)
+    }else {
+        cb(null,false)
+    } 
+}
+
+const upload = multer({
+    storage: storage,
+    limits: {
+    fieldSize: 1024 * 1024 * 5
+    },
+    fileFilter : fileFilter
+})
+
+/*
+Update profie  picture
+{
+    "uid": "",
+    "profile_picture" : file
+}
+*/ 
+router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
+    //console.log(req.file)
+    //http://apifood.comsciproject.com//
+    //http://localhost:3000
+    let path = "http://apifood.comsciproject.com"+'/'+req.file.path
+    let body = req.body
+    pool.query("UPDATE `user` SET `profile_img` = ?  WHERE `user_ID` = ?",[path,body.uid],(error,results,fields)=>{
+        if(results == ""){
+            res.json({
+                success: 0,
+                message: "no-data"
+            })
+        }
+        if(error){
+            return res.json({
+                success: 0,
+                message: error
+            })
+        }
+
+        return res.json({
+            success: 1,
+            message : "Update success"
+        })
+
     })
 })
 

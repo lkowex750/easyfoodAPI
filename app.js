@@ -10,6 +10,7 @@ const path = require('path')
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads',express.static(__dirname + '/uploads'))
+app.use('/uploadProfile',express.static(__dirname + '/uploadProfile'))
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
