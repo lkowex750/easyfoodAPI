@@ -4,6 +4,7 @@ const pool = require('../../database/database')
 const passwordHash = require('password-hash')
 const mergeJSON = require('merge-json')
 const multer = require('multer')
+const jwt = require('jsonwebtoken')
 
 
 
@@ -60,10 +61,16 @@ router.post('/login',(req,res)=>{
             })
         }
         pool.query("SELECT * FROM user WHERE username = ? AND password = ?",[body.username,results[0].password],(err,results,field)=>{
-            return res.json({
-                success: 1,
-                data: results[0]
+           
+            jwt.sign({user: results[0]}, 'secretkey', (err,token)=>{
+                return res.json({
+                    success: 1,
+                    data: results[0],
+                    token
+                })
             })
+
+            
         })
   
     })  
@@ -86,6 +93,8 @@ router.post('/signup',(req,res)=>{
     console.log(body.password)
     pool.query("INSERT INTO `user` (`user_ID`, `username`, `password`, `fullName`, `nickName`, `status`, `profile_img`) VALUES (NULL, ?, ?, ?, ?, ?, ?)",
     [body.username,body.password,body.fullName,body.nickName,body.status,body.profile_img],(error,results,fields)=>{
+
+       
         if(error){
             if(error.errno == 1062){
                 return res.json({
@@ -98,10 +107,12 @@ router.post('/signup',(req,res)=>{
                 message: error
             })
         }
-        return res.json({
-            success: 1,
-            data: results
-        })
+            return res.json({
+                success: 1,
+                data : results,
+                
+            })
+        
         
         
     })
@@ -201,5 +212,44 @@ router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
 
     })
 })
+
+router.post('/test', verifyToken,(req,res) =>{
+    jwt.verify(req.token,'secretkey',(err,authData) =>{
+        if(err){
+            
+            res.sendStatus(403)
+        }else {
+            res.json({
+            message: 'post created...',
+            authData
+             }) 
+        }
+    })
+   
+})  
+//format of token
+//authorization : bearer <access_token>
+
+//verify token
+function verifyToken(req,res,next){
+    //get auth header value
+
+    const bearerHeader = req.headers['authorization']
+    //check if bearer is undifined
+    if(typeof bearerHeader !== 'undefined'){
+        //split at the space
+        const bearer = bearerHeader.split(' ')
+        //get token from array
+        const bearerToken = bearer[1]
+        //set the token
+
+       
+        req.token = bearerToken 
+        next()
+    }else {
+        //forbidden
+        res.sendStatus(403)
+    }
+}
 
 module.exports = router
