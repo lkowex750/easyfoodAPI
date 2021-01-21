@@ -185,7 +185,7 @@ Update profie  picture
     "profile_picture" : file
 }
 */ 
-router.post('/uploadProfile',upload.single("profile_picture"),verifyToken,(req,res)=>{
+router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
     //console.log(req.file)
     //http://apifood.comsciproject.com//
     //http://localhost:3000
