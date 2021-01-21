@@ -185,43 +185,52 @@ Update profie  picture
     "profile_picture" : file
 }
 */ 
-router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
+router.post('/uploadProfile',upload.single("profile_picture"),verifyToken,(req,res)=>{
     //console.log(req.file)
     //http://apifood.comsciproject.com//
     //http://localhost:3000
-    let path = "http://apifood.comsciproject.com"+'/'+req.file.path
-    let body = req.body
-    pool.query("UPDATE `user` SET `profile_img` = ?  WHERE `user_ID` = ?",[path,body.uid],(error,results,fields)=>{
-        if(results == ""){
-            res.json({
-                success: 0,
-                message: "no-data"
-            })
-        }
-        if(error){
+
+    //jwt.verify(req.token,'secretkey',(err,authData) =>{
+
+
+        let path = "http://apifood.comsciproject.com"+'/'+req.file.path
+        let body = req.body
+        pool.query("UPDATE `user` SET `profile_img` = ?  WHERE `user_ID` = ?",[path,body.uid],(error,results,fields)=>{
+            if(results == ""){
+                res.json({
+                    success: 0,
+                    message: "no-data"
+                })
+            }
+            if(error){
+                return res.json({
+                    success: 0,
+                    message: error
+                })
+            }
+
             return res.json({
-                success: 0,
-                message: error
+                success: 1,
+                message : "Update success"
             })
-        }
 
-        return res.json({
-            success: 1,
-            message : "Update success"
         })
+   // })
+    
 
-    })
 })
 
-router.post('/test', verifyToken,(req,res) =>{
+router.post('/test1', verifyToken,(req,res) =>{
     jwt.verify(req.token,'secretkey',(err,authData) =>{
+        //console.log(authData.user.fullName)
         if(err){
             
             res.sendStatus(403)
         }else {
             res.json({
-            message: 'post created...',
+            message: '55555',
             authData
+            
              }) 
         }
     })
