@@ -6,12 +6,23 @@ const mergeJSON = require('merge-json')
 const multer = require('multer')
 const jwt = require('jsonwebtoken')
 
+var auth = require('../../check-auth/auth')
+const { verifyToken } = require('../../check-auth/auth')
 
 
 //GET ALL User
 router.get('/:uID', (req, res)=>{
     let id = req.params.uID
     pool.query("SELECT * FROM user WHERE user_ID = ?",[id],(error, results,field)=>{
+        var data = {
+            user_ID: results[0].user_ID,
+            username : results[0].username,
+            fullName : results[0].fullName,
+            nickName : results[0].nickName,
+            profile_img : results[0].profile_img,
+            status : results[0].status
+        }
+        
         if(results ==""){
             return res.json({
                 success: 0,
@@ -26,7 +37,7 @@ router.get('/:uID', (req, res)=>{
         }
         return res.json({
             success: 1,
-            data: results[0]
+            data: data
         })
     })
 })
@@ -62,10 +73,9 @@ router.post('/login',(req,res)=>{
         }
         pool.query("SELECT * FROM user WHERE username = ? AND password = ?",[body.username,results[0].password],(err,results,field)=>{
            
-            jwt.sign({user: results[0]}, 'secretkey', (err,token)=>{
+            jwt.sign({user: results[0].user_ID}, 'secretkey', (err,token)=>{
                 return res.json({
                     success: 1,
-                    data: results[0],
                     token
                 })
             })
@@ -191,9 +201,9 @@ router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
     //http://localhost:3000
 
     //jwt.verify(req.token,'secretkey',(err,authData) =>{
-
-
+       
         let path = "http://apifood.comsciproject.com"+'/'+req.file.path
+        //let path = "http://localhost:3000"+'/'+req.file.path
         let body = req.body
         pool.query("UPDATE `user` SET `profile_img` = ?  WHERE `user_ID` = ?",[path,body.uid],(error,results,fields)=>{
             if(results == ""){
@@ -220,7 +230,8 @@ router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
 
 })
 
-router.post('/test1', verifyToken,(req,res) =>{
+router.post('/test1',auth.verifyToken,(req,res) =>{
+    
     jwt.verify(req.token,'secretkey',(err,authData) =>{
         //console.log(authData.user.fullName)
         if(err){
@@ -240,25 +251,25 @@ router.post('/test1', verifyToken,(req,res) =>{
 //authorization : bearer <access_token>
 
 //verify token
-function verifyToken(req,res,next){
-    //get auth header value
+// function verifyToken(req,res,next){
+//     //get auth header value
 
-    const bearerHeader = req.headers['authorization']
-    //check if bearer is undifined
-    if(typeof bearerHeader !== 'undefined'){
-        //split at the space
-        const bearer = bearerHeader.split(' ')
-        //get token from array
-        const bearerToken = bearer[1]
-        //set the token
+//     const bearerHeader = req.headers['authorization']
+//     //check if bearer is undifined
+//     if(typeof bearerHeader !== 'undefined'){
+//         //split at the space
+//         const bearer = bearerHeader.split(' ')
+//         //get token from array
+//         const bearerToken = bearer[1]
+//         //set the token
 
        
-        req.token = bearerToken 
-        next()
-    }else {
-        //forbidden
-        res.sendStatus(403)
-    }
-}
+//         req.token = bearerToken 
+//         next()
+//     }else {
+//         //forbidden
+//         res.sendStatus(403)
+//     }
+// }
 
 module.exports = router
