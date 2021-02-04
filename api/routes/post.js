@@ -90,9 +90,13 @@ router.get('/mypost', auth.verifyToken, (req, res) => {
         }
         let uid = authData.user
         pool.query("SELECT * FROM post where uid = ?", [uid], (error, results, field) => {
-            return res.json({
-                data: results
+
+            jwt.sign({post: results}, 'secretkey', (err, token) =>{
+                return res.json({
+                    data: token
+                })
             })
+            
         })
 
     })

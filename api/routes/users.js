@@ -230,9 +230,120 @@ router.post('/uploadProfile', upload.single("profile_picture"), (req, res) => {
 
 })
 
-router.post('/test1', auth.verifyToken, (req, res) => {
+router.get('/path_profileImage/:uid', (req, res)=>{//ดึง path รูปภาพล่าสุด/pok
+    let id = req.params.uid
+    pool.query("SELECT profile_img FROM user WHERE user_ID = ?",[id],(error, results,field)=>{
+        var data = {
+            profile_img : results[0].profile_img,
+        }
+        
+        if(results ==""){
+            return res.json({
+                success: 0,
+                message: "no-data"
+            })
+        }
+        if(error){
+            return res.json({
+                success: 0,
+                message: error
+            })
+        }
+        return res.json({
+            success: 1,
+            data: data
+        })
+    })
+})
 
-    jwt.verify(req.token, 'secretkey', (err, authData) => {
+router.post('/path_updateprofileImage',(req,res)=>{//Update path รูปภาพล่าสุด/pok
+    let body = req.body
+    pool.query("UPDATE `user` SET `profile_img` = ? WHERE `user_ID` = ?",[body.profileImagePath,body.user_id],(error,results,fields)=>{
+        if(error){
+            return res.json({
+                success: 0,
+                message: error
+            })
+        }
+
+        pool.query("SELECT * FROM user WHERE user_ID = ?",[body.user_id],(error, results,field)=>{
+            var data = {
+                user_ID: results[0].user_ID,
+                username : results[0].username,
+                fullName : results[0].fullName,
+                nickName : results[0].nickName,
+                profile_img : results[0].profile_img,
+                status : results[0].status
+            }
+            
+            if(results ==""){
+                return res.json({
+                    success: 0,
+                    message: "no-data"
+                })
+            }
+            if(error){
+                return res.json({
+                    success: 0,
+                    message: error
+                })
+            }
+            return res.json({
+                success: 1,
+                data: data
+            })
+        })
+        
+   })
+})
+
+router.post('/editNickname',(req,res)=>{//แก้ไขชื่อเล่น/pok
+    let body = req.body
+    pool.query("UPDATE `user` SET `nickName` = ? WHERE `user_ID` = ?",[body.newNickname,body.user_id],(error,results,fields)=>{
+        if(error){
+            return res.json({
+                success: 0,
+                message: error
+            })
+        }
+
+        pool.query("SELECT * FROM user WHERE user_ID = ?",[body.user_id],(error, results,field)=>{
+            var data = {
+                user_ID: results[0].user_ID,
+                username : results[0].username,
+                fullName : results[0].fullName,
+                nickName : results[0].nickName,
+                profile_img : results[0].profile_img,
+                status : results[0].status
+            }
+            
+            if(results ==""){
+                return res.json({
+                    success: 0,
+                    message: "no-data"
+                })
+            }
+            if(error){
+                return res.json({
+                    success: 0,
+                    message: error
+                })
+            }
+            return res.json({
+                success: 1,
+                data: data
+            })
+        })
+        
+   })
+})
+
+
+
+
+router.post('/test1',auth.verifyToken,(req,res) =>{
+    
+    jwt.verify(req.token,'secretkey',(err,authData) =>{
         //console.log(authData.user.fullName)
         if (err) {
 

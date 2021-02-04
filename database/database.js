@@ -1,11 +1,15 @@
 const {createPool} = require('mysql')
+let passServer = "Ase%31d2"
+let passLocalhost = "1234"
 
+let databaseServer = "comsci_easyfood"
+let databaseLocalhost = "easyfood"
 const pool = createPool({
     host : "localhost",
     user : "easyfood",
-    password : "Ase%31d2",
+    password : passServer,
     //Ase%31d2
-    database : "comsci_easyfood",
+    database : databaseServer,
     //comsci_easyfood
     connectionLimit : 10
 })
