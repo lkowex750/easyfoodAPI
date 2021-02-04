@@ -11,25 +11,25 @@ const { verifyToken } = require('../../check-auth/auth')
 
 
 //GET ALL User
-router.get('/:uID', (req, res)=>{
+router.get('/:uID', (req, res) => {
     let id = req.params.uID
-    pool.query("SELECT * FROM user WHERE user_ID = ?",[id],(error, results,field)=>{
+    pool.query("SELECT * FROM user WHERE user_ID = ?", [id], (error, results, field) => {
         var data = {
             user_ID: results[0].user_ID,
-            username : results[0].username,
-            fullName : results[0].fullName,
-            nickName : results[0].nickName,
-            profile_img : results[0].profile_img,
-            status : results[0].status
+            username: results[0].username,
+            fullName: results[0].fullName,
+            nickName: results[0].nickName,
+            profile_img: results[0].profile_img,
+            status: results[0].status
         }
-        
-        if(results ==""){
+
+        if (results == "") {
             return res.json({
                 success: 0,
                 message: "no-data"
             })
         }
-        if(error){
+        if (error) {
             return res.json({
                 success: 0,
                 message: error
@@ -46,44 +46,44 @@ router.get('/:uID', (req, res)=>{
 {"username": "",
 "password": ""}
 */
-router.post('/login',(req,res)=>{
+router.post('/login', (req, res) => {
     let body = req.body
-    pool.query("SELECT password FROM user WHERE username = ?",[body.username],(error,results,field) => {
-        if(error){
+    pool.query("SELECT password FROM user WHERE username = ?", [body.username], (error, results, field) => {
+        if (error) {
             res.json({
                 success: 0,
                 message: error
             })
         }
-        
-        if(results[0] == null){
+
+        if (results[0] == null) {
             return res.json({
                 success: 0,
                 message: "invalid username or password"
             })
         }
-        console.log(results[0].password) 
-        let check =   passwordHash.verify(body.password,results[0].password)
-        console.log(check) 
-        if(!check){
+        console.log(results[0].password)
+        let check = passwordHash.verify(body.password, results[0].password)
+        console.log(check)
+        if (!check) {
             return res.json({
                 success: 0,
                 message: "invalid password"
             })
         }
-        pool.query("SELECT * FROM user WHERE username = ? AND password = ?",[body.username,results[0].password],(err,results,field)=>{
-           
-            jwt.sign({user: results[0].user_ID}, 'secretkey', (err,token)=>{
+        pool.query("SELECT * FROM user WHERE username = ? AND password = ?", [body.username, results[0].password], (err, results, field) => {
+
+            jwt.sign({ user: results[0].user_ID }, 'secretkey', (err, token) => {
                 return res.json({
                     success: 1,
                     token
                 })
             })
 
-            
+
         })
-  
-    })  
+
+    })
 })
 
 /*
@@ -97,57 +97,21 @@ SignUp
         "profile_img": "abcdefg"
        }
 */
-router.post('/signup',(req,res)=>{
+router.post('/signup', (req, res) => {
     let body = req.body
     body.password = passwordHash.generate(body.password)
     console.log(body.password)
     pool.query("INSERT INTO `user` (`user_ID`, `username`, `password`, `fullName`, `nickName`, `status`, `profile_img`) VALUES (NULL, ?, ?, ?, ?, ?, ?)",
-    [body.username,body.password,body.fullName,body.nickName,body.status,body.profile_img],(error,results,fields)=>{
+        [body.username, body.password, body.fullName, body.nickName, body.status, body.profile_img], (error, results, fields) => {
 
-       
-        if(error){
-            if(error.errno == 1062){
-                return res.json({
-                    success: 0,
-                    message: "username must be unique"
-                })
-            }
-            return res.json({
-                success: 0,
-                message: error
-            })
-        }
-            return res.json({
-                success: 1,
-                data : results,
-                
-            })
-        
-        
-        
-    })
-})
-/*
-Update user profile & cancel profile
-{"fullName:": "","nickName":""}
-*/ 
-router.post('/edit',(req,res)=>{
-    let id = req.body.uid
-    let body = req.body
 
-    pool.query("SELECT * FROM user WHERE user_ID = ?",[id],(err,results,field)=>{
-       let oldData = results[0]
-       if(results == ""){
-           return res.json({
-               success: 0,
-               message: "nodata"
-           })
-       }
-       let jsonOldData = JSON.parse(JSON.stringify(oldData))
-
-       let newData = mergeJSON.merge(jsonOldData, body)
-       pool.query("UPDATE `user` SET `fullName` = ?, `nickName` = ?, `status`= ? WHERE `user_ID` = ?",[newData.fullName,newData.nickName,newData.status,id],(error,results,fields)=>{
-            if(error){
+            if (error) {
+                if (error.errno == 1062) {
+                    return res.json({
+                        success: 0,
+                        message: "username must be unique"
+                    })
+                }
                 return res.json({
                     success: 0,
                     message: error
@@ -155,37 +119,73 @@ router.post('/edit',(req,res)=>{
             }
             return res.json({
                 success: 1,
-                message : "Update success"
+                data: results,
 
             })
-       })
+
+
+
+        })
+})
+/*
+Update user profile & cancel profile
+{"fullName:": "","nickName":""}
+*/
+router.post('/edit', (req, res) => {
+    let id = req.body.uid
+    let body = req.body
+
+    pool.query("SELECT * FROM user WHERE user_ID = ?", [id], (err, results, field) => {
+        let oldData = results[0]
+        if (results == "") {
+            return res.json({
+                success: 0,
+                message: "nodata"
+            })
+        }
+        let jsonOldData = JSON.parse(JSON.stringify(oldData))
+
+        let newData = mergeJSON.merge(jsonOldData, body)
+        pool.query("UPDATE `user` SET `fullName` = ?, `nickName` = ?, `status`= ? WHERE `user_ID` = ?", [newData.fullName, newData.nickName, newData.status, id], (error, results, fields) => {
+            if (error) {
+                return res.json({
+                    success: 0,
+                    message: error
+                })
+            }
+            return res.json({
+                success: 1,
+                message: "Update success"
+
+            })
+        })
     })
 })
 
 
 const storage = multer.diskStorage({
-    destination: function(req, file, cb){
+    destination: function (req, file, cb) {
         cb(null, 'uploadProfile/')
     },
-    filename: function(req, file, cb){
-        cb(null, new Date().toISOString().replace(/:|\./g,'') + '-' + file.originalname);
+    filename: function (req, file, cb) {
+        cb(null, new Date().toISOString().replace(/:|\./g, '') + '-' + file.originalname);
     }
 })
 
-const fileFilter = (req, file , cb ) =>{
-    if(file.mimetype === 'image/png' || file.mimetype === 'image/jpeg'){
-        cb(null,true)
-    }else {
-        cb(null,false)
-    } 
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
+        cb(null, true)
+    } else {
+        cb(null, false)
+    }
 }
 
 const upload = multer({
     storage: storage,
     limits: {
-    fieldSize: 1024 * 1024 * 5
+        fieldSize: 1024 * 1024 * 5
     },
-    fileFilter : fileFilter
+    fileFilter: fileFilter
 })
 
 /*
@@ -194,59 +194,59 @@ Update profie  picture
     "uid": "",
     "profile_picture" : file
 }
-*/ 
-router.post('/uploadProfile',upload.single("profile_picture"),(req,res)=>{
+*/
+router.post('/uploadProfile', upload.single("profile_picture"), (req, res) => {
     //console.log(req.file)
     //http://apifood.comsciproject.com//
     //http://localhost:3000
 
     //jwt.verify(req.token,'secretkey',(err,authData) =>{
-       
-        let path = "http://apifood.comsciproject.com"+'/'+req.file.path
-        //let path = "http://localhost:3000"+'/'+req.file.path
-        let body = req.body
-        pool.query("UPDATE `user` SET `profile_img` = ?  WHERE `user_ID` = ?",[path,body.uid],(error,results,fields)=>{
-            if(results == ""){
-                res.json({
-                    success: 0,
-                    message: "no-data"
-                })
-            }
-            if(error){
-                return res.json({
-                    success: 0,
-                    message: error
-                })
-            }
 
-            return res.json({
-                success: 1,
-                message : "Update success"
+    let path = "http://apifood.comsciproject.com" + '/' + req.file.path
+    //let path = "http://localhost:3000"+'/'+req.file.path
+    let body = req.body
+    pool.query("UPDATE `user` SET `profile_img` = ?  WHERE `user_ID` = ?", [path, body.uid], (error, results, fields) => {
+        if (results == "") {
+            res.json({
+                success: 0,
+                message: "no-data"
             })
+        }
+        if (error) {
+            return res.json({
+                success: 0,
+                message: error
+            })
+        }
 
+        return res.json({
+            success: 1,
+            message: "Update success"
         })
-   // })
-    
+
+    })
+    // })
+
 
 })
 
-router.post('/test1',auth.verifyToken,(req,res) =>{
-    
-    jwt.verify(req.token,'secretkey',(err,authData) =>{
+router.post('/test1', auth.verifyToken, (req, res) => {
+
+    jwt.verify(req.token, 'secretkey', (err, authData) => {
         //console.log(authData.user.fullName)
-        if(err){
-            
+        if (err) {
+
             res.sendStatus(403)
-        }else {
+        } else {
             res.json({
-            message: '55555',
-            authData
-            
-             }) 
+                message: '55555',
+                authData
+
+            })
         }
     })
-   
-})  
+
+})
 //format of token
 //authorization : bearer <access_token>
 
@@ -263,7 +263,7 @@ router.post('/test1',auth.verifyToken,(req,res) =>{
 //         const bearerToken = bearer[1]
 //         //set the token
 
-       
+
 //         req.token = bearerToken 
 //         next()
 //     }else {
