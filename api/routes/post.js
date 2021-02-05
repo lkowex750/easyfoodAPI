@@ -34,7 +34,7 @@ const upload = multer({
 
 
 
-router.post('/', upload.single('postImage'), auth.verifyToken, (req, res, next) => {
+router.post('/createPost', upload.single('postImage'), auth.verifyToken, (req, res, next) => {
     //console.log(req.file.path)
     let server = "http://apifood.comsciproject.com"
     let localhost = "localhost:3000"
