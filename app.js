@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const userRoute = require('./api/routes/users')
 const postRoute = require('./api/routes/post')
+const followRoute = require('./api/routes/follow')
 const bodyParser = require('body-parser')
 const path = require('path')
 
@@ -22,6 +23,7 @@ app.use(function(req, res, next) {
 
 app.use('/users',userRoute)
 app.use('/post',postRoute)
+app.use('/follow',followRoute)
 
 
 

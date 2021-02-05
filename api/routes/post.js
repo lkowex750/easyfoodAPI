@@ -104,4 +104,25 @@ router.get('/mypost', auth.verifyToken, (req, res) => {
 
 })
 
+router.get('/countMyPost',auth.verifyToken,(req,res)=>{
+    jwt.verify(req.token,'secretkey',(err,authData)=>{
+        if(err){
+            res.json({
+                message: "something this wrong!"
+            })
+        }
+        let uid = authData.user
+        pool.query("select count(post_ID) as countMyPost from post where uID = ? ",[uid],(error,results,field)=>{
+            if(error){
+                res.json({
+                    message: "something this wrong selected!"
+                })
+            }
+            return res.json({
+                countMyPost: results[0].countMyPost
+            })
+        })
+    })
+})
+
 module.exports = router
