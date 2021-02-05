@@ -34,14 +34,15 @@ const upload = multer({
 
 
 
-router.post('/createPost', upload.single('postImage'), auth.verifyToken, (req, res, next) => {
+router.post('/createPost', upload.single('postImage'), (req, res, next) => {
     //console.log(req.file.path)
     let server = "http://apifood.comsciproject.com"
     let localhost = "localhost:3000"
     let path = server + '/' + req.file.path
    
     let body = req.body
-    jwt.verify(req.token, 'secretkey', (err, authData) => {
+    //console.log(req.body.token)
+    jwt.verify(req.body.token, 'secretkey', (err, authData) => {
         //console.log(authData.user.fullName)
         if (err) {
             res.json({
@@ -71,6 +72,8 @@ router.post('/createPost', upload.single('postImage'), auth.verifyToken, (req, r
 
 
     })
+
+
     // res.json({
     //     body: body.uid,
     //     body1: req.token
