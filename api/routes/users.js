@@ -397,7 +397,7 @@ router.post('/test1', auth.verifyToken, (req, res) => {
 router.get('/searchUser/:name', (req, res) => {//ดึง path รูปภาพล่าสุด/pok
     let names = req.params.name
     console.log(names+"5555")
-    pool.query("SELECT * FROM user WHERE nickName LIKE concat('%',?,'%') ORDER BY `user`.`nickName` ASC", [names], (error, results, field) => {
+    pool.query("SELECT * FROM user WHERE nickName LIKE concat(?,'%') ORDER BY `user`.`nickName` ASC", [names], (error, results, field) => {
         // var data = {
         //     user: results,
         // }
