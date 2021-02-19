@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 })
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
+    if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/gif') {
         cb(null, true)
     } else {
         cb(null, false)
@@ -27,7 +27,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
     storage: storage,
     limits: {
-        fieldSize: 1024 * 1024 * 5
+        fileSize: 2048 * 2048 * 10
     },
     fileFilter: fileFilter
 })
@@ -211,15 +211,21 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
             let data1 = new Array()
                    
             arr.forEach(element =>{
-                pool.query('SELECT * FROM `post` WHERE `uID` = ?  ORDER BY `date` DESC',[element],(err,results,field) =>{
+                
+                pool.query('SELECT user.nickName,user.profile_img ,`post_ID`, `uID`, `status_post`, `privacy_post`, `image`, `caption`, `date` FROM `post`,user WHERE user.user_ID = post.uID and uID = ? ORDER BY `date` DESC',[element],(err,results,field) =>{
                     if(results != ""){
                         results.forEach(e =>{
                             data1.push(e)
+                            
                         })
                     }
 
                     if(element == arr[arr.length-1]){
-                        
+                        data1.sort(function(a,b){
+                            // Turn your strings into dates, and then subtract them
+                            // to get a value that is either negative, positive, or zero.
+                            return new Date(b.date) - new Date(a.date);
+                          });
                         res.json({
                             feed: data1
                         })
