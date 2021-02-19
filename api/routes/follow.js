@@ -59,7 +59,7 @@ router.get('/countFollower',auth.verifyToken,(req,res)=>{
             })
         }
         let myid = authData.user
-        //จำนวนที่ติดตามเรา
+        //จำนวนทีติดตามเรา
         pool.query("select count(follow_ID) as countMyFollower from follow where following_ID = ?",[myid],(error,results,field)=>{
             if(error){
                 res.json({
