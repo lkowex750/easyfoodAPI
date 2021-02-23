@@ -27,6 +27,30 @@ router.post('/following',auth.verifyToken,(req,res)=>{
     })
 })
 
+router.post('/unfollowing',auth.verifyToken,(req,res)=>{
+    jwt.verify(req.token,'secretkey',(err,authData)=>{
+        let body = req.body
+        if(err){
+            res.json({
+                message: "something this wrong!"
+            })
+        }
+        let uid = authData.user
+        pool.query("DELETE FROM `follow` WHERE `my_ID` = ? AND `following_ID` = ?",[uid,body.following_ID], (error, results, field) =>{
+            if(error){
+                res.json({
+                    message: "delete error!"
+                })
+            }
+            if(results.affectedRows == 0){res.status(201).json({message: "no-data"})}
+            else {return res.json({
+                success: 1
+            })
+        }
+        })
+    })
+})
+
 router.get('/countFollowing',auth.verifyToken,(req,res)=>{
     jwt.verify(req.token,'secretkey',(err,authData)=>{
         if(err){
@@ -106,6 +130,29 @@ router.get('/countFollowerUser/:id',(req,res)=>{
             countMyFollower: results[0].countMyFollower
         })
 
+    })
+})
+
+router.get('/checkFollow/:fid',auth.verifyToken,(req,res)=>{
+    let fid = req.params.fid
+    jwt.verify(req.token,'secretkey',(err,authData)=>{
+        if(err){
+            res.json({
+                message: "something this wrong!"
+            })
+        }
+        let myid = authData.user
+        pool.query("SELECT COUNT(`follow_ID`) as MyFollower FROM `follow` WHERE `my_ID`= ? AND `following_ID` = ?",[myid,fid],(error,results,field) =>{
+            if(error){
+                res.json({
+                    message: "something this wrong from selected!"
+                })
+            }
+            return res.json({
+                checkFollow: results[0].MyFollower
+            })
+            
+        })
     })
 })
 
