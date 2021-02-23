@@ -396,7 +396,6 @@ router.post('/test1', auth.verifyToken, (req, res) => {
 
 router.get('/searchUser/:name', (req, res) => {//ดึง path รูปภาพล่าสุด/pok
     let names = req.params.name
-    console.log(names+"5555")
     pool.query("SELECT * FROM user WHERE nickName LIKE concat(?,'%') ORDER BY `user`.`nickName` ASC", [names], (error, results, field) => {
         // var data = {
         //     user: results,
@@ -421,6 +420,60 @@ router.get('/searchUser/:name', (req, res) => {//ดึง path รูปภา�
     })
 })
 
+//============================================select profileUser============================================
+router.get('/dataUser/:username', (req, res) => {
+    let username = req.params.username
+    var success
+    var data
+    pool.query("SELECT * FROM user WHERE username = ?", [username], (error, results, field) => {
+        if (results == "") {
+            success = 0
+            data = "no-data"
+        }else if (error) {
+            success = 0
+            data = error
+        }else{
+            success = 1
+            data = {
+                user_ID: results[0].user_ID,
+                username: results[0].username,
+                fullName: results[0].fullName,
+                nickName: results[0].nickName,
+                profile_img: results[0].profile_img,
+                status: results[0].status
+            }
+        }
+        
+        return res.json({
+            success,
+            data
+        })
+    })
+})
+
+router.get('/convertNameToUsername/:nickname', (req, res) => {//สำหรับตอนค้นหา แปลง ชื่อเล่นเป็น username
+    let nickname = req.params.nickname
+    var success
+    var data
+    pool.query("SELECT username FROM `user` WHERE nickName = ?", [nickname], (error, results, field) => {
+        if (results == "") {
+            success = 0
+            data = "no-data"
+        }else if (error) {
+            success = 0
+            data = error
+        }else{
+            success = 1
+            data = results[0].username
+        }
+        
+        return res.json({
+            success,
+            data
+        })
+    })
+})
+//===============================================select profileUser============================================
 
 
 module.exports = router

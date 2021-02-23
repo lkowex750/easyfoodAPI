@@ -75,6 +75,40 @@ router.get('/countFollower',auth.verifyToken,(req,res)=>{
     })
 })
 
+//##########################################-สำหรับตอนค้นหา-###################################################
+router.get('/countFollowingUser/:id',(req,res)=>{
+    let userID = req.params.id
+    pool.query("select count(follow_ID) as countMyFollowing from follow where my_ID = ?",[userID],(error,results,field)=>{
+        if(error){
+            res.json({
+                message: "something this wrong from selected!"
+            })
+        }
 
+        return res.json({
+            countMyFollowing: results[0].countMyFollowing
+        })
+
+    })
+})
+
+router.get('/countFollowerUser/:id',(req,res)=>{
+    let userID = req.params.id
+    //จำนวนทีติดตามเรา
+    pool.query("select count(follow_ID) as countMyFollower from follow where following_ID = ?",[userID],(error,results,field)=>{
+        if(error){
+            res.json({
+                message: "something this wrong from selected!"
+            })
+        }
+
+        return res.json({
+            countMyFollower: results[0].countMyFollower
+        })
+
+    })
+})
+
+//##########################################-สำหรับตอนค้นหา-###################################################
 
 module.exports = router

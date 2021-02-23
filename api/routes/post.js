@@ -241,7 +241,31 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
 })
 
 
+//##########################################-สำหรับตอนค้นหา-###################################################
+router.get('/countMyPostUser/:id',(req,res)=>{
+    let userID = req.params.id
+    pool.query("select count(post_ID) as countMyPost from post where uID = ? ", [userID], (error, results, field) => {
+        if (error) {
+            res.json({
+                message: "something this wrong selected!"
+            })
+        }
+        return res.json({
+            countMyPost: results[0].countMyPost
+        })
+    })
+})
 
+router.get('/mypostUser/:id',(req, res) => {
+    let userID = req.params.id
+    pool.query("SELECT * FROM post where uid = ?", [userID], (error, results, field) => {
+        return res.json({
+            data: results
+        })
+    })
+
+})
+//##########################################-สำหรับตอนค้นหา-###################################################
 
 
 module.exports = router
