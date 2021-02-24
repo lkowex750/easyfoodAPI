@@ -92,7 +92,7 @@ router.get('/mypost', auth.verifyToken, (req, res) => {
 
         }
         let uid = authData.user
-        pool.query("SELECT * FROM post where uid = ?", [uid], (error, results, field) => {
+        pool.query("SELECT * FROM `post` WHERE `uID` = ? ORDER BY `date` DESC", [uid], (error, results, field) => {
 
             //jwt.sign({post: results}, 'secretkey', (err, token) =>{
             return res.json({
@@ -258,7 +258,7 @@ router.get('/countMyPostUser/:id',(req,res)=>{
 
 router.get('/mypostUser/:id',(req, res) => {
     let userID = req.params.id
-    pool.query("SELECT * FROM post where uid = ?", [userID], (error, results, field) => {
+    pool.query("SELECT * FROM `post` WHERE `uID` = ? ORDER BY `date` DESC", [userID], (error, results, field) => {
         return res.json({
             data: results
         })
