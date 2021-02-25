@@ -4,6 +4,7 @@ const pool = require('../../database/database')
 const multer = require('multer')
 const auth = require('../../check-auth/auth')
 const jwt = require('jsonwebtoken')
+const mergeJSON = require('merge-json')
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -212,7 +213,7 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
                    
             arr.forEach(element =>{
                 
-                pool.query('SELECT user.nickName,user.profile_img ,`post_ID`, `uID`, `status_post`, `privacy_post`, `image`, `caption`, `date` FROM `post`,user WHERE user.user_ID = post.uID and uID = ? ORDER BY `date` DESC',[element],(err,results,field) =>{
+                pool.query('SELECT user.username,user.nickName,user.profile_img ,`post_ID`, `uID`, `status_post`, `privacy_post`, `image`, `caption`, `date` FROM `post`,user WHERE user.user_ID = post.uID and uID = ? ORDER BY `date` DESC',[element],(err,results,field) =>{
                     if(results != ""){
                         results.forEach(e =>{
                             data1.push(e)
@@ -267,5 +268,59 @@ router.get('/mypostUser/:id',(req, res) => {
 })
 //##########################################-สำหรับตอนค้นหา-###################################################
 
+//EditPost ส่ง token มา และ ค่าต่างๆของโพสต์มาใน body
+
+router.post('/editPost',auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,'secretkey', (err, authData) =>{
+        if(err){
+            res.json({message:"something this wrong!!"})
+        }
+        let post = req.body
+        let uid = authData.user
+        pool.query("select * from post where post_ID = ? and uID = ?",[post.post_ID,uid],(error,results,field) =>{
+            let oldData = results[0]
+             if (results == "") {
+                return res.json({
+                 success: 0,
+                 message: "nodata"
+            })
+        }
+            let jsonOldData = JSON.parse(JSON.stringify(oldData))
+
+            let newData = mergeJSON.merge(jsonOldData, post)
+            pool.query("UPDATE `post` SET `post_ID`=?,`uID`=?,`status_post`=?,`privacy_post`=?,`image`=?,`caption`=? WHERE `post_ID` = ? AND `uID` = ?",
+            [newData.post_ID,uid,newData.status_post,newData.privacy_post,newData.image,newData.caption,newData.post_ID,uid],(error,results,field) =>{
+            if(error){res.json({message: error})}
+            
+            else {return res.json({
+                success: 1
+                  })
+             }
+             })
+        })
+        
+    })
+})
+
+//deletePost ส่ง token มา และ ค่าต่างๆของโพสต์มาใน body
+
+router.post('/deletePost',auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,'secretkey',(err,authData) =>{
+        if(err){
+            res.json({message:"something this wrong!!"})
+        }
+        let post = req.body
+        let uid = authData.user
+        
+        pool.query("delete from likepost where pID = ?",[post.post_ID])//delete like
+        pool.query("delete from commentpost where pID = ?",[post.post_ID])//delete comment
+        pool.query("delete from post where post_ID = ? and uID = ?",[post.post_ID,uid],(error,results,field) =>{
+            if(error){res.json({message: error})}
+            if(results.affectedRows != 0){
+                return res.json({success: 1})
+            }
+        })
+    })
+})
 
 module.exports = router
