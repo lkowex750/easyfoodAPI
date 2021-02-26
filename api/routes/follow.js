@@ -158,4 +158,27 @@ router.get('/checkFollow/:fid',auth.verifyToken,(req,res)=>{
 
 //##########################################-สำหรับตอนค้นหา-###################################################
 
+router.get("/randFollow",auth.verifyToken,(req,res) =>{
+    //
+
+    jwt.verify(req.token,'secretkey',(err,authData)=>{
+        if(err){
+            res.json({
+                message: "something this wrong!"
+            })
+        }
+        let myid = authData.user
+        pool.query("SELECT DISTINCT user.user_ID,user.username,user.nickName,user.profile_img FROM user,follow WHERE follow.my_ID != ? and user.user_ID != ? ORDER BY RAND() LIMIT 5"
+        ,[myid,myid,myid],(error,results,field) =>{
+            if(error){
+                res.json({
+                    message: error
+                })
+            }
+            return res.json({
+                results
+            })
+        })
+    })
+})
 module.exports = router
