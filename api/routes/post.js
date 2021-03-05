@@ -340,7 +340,7 @@ router.post('/deletePost',auth.verifyToken,(req,res) =>{
     })
 })
 
-router.post('commentPost',auth.verifyToken,(req,res) =>{
+router.post('/commentPost',auth.verifyToken,(req,res) =>{
     jwt.verify(req.token,'secretkey',(err,authData) =>{
         if(err){
             res.json({message:"something this wrong!!"})
@@ -364,7 +364,7 @@ router.post('commentPost',auth.verifyToken,(req,res) =>{
     })
 })
 
-router.get('getCommentPost/:pid',auth.verifyToken,(req,res) =>{
+router.get('/getCommentPost/:pid',auth.verifyToken,(req,res) =>{
     jwt.verify(req.token,'secretkey',(err,authData) =>{
         if(err){
             res.json({message:"something this wrong!!"})
