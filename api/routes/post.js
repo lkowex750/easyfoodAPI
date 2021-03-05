@@ -191,7 +191,7 @@ router.post('/likepost', auth.verifyToken, (req, res) => {
         })
     })
 })
-
+//SELECT user.username,user.nickName,user.profile_img ,`post_ID`, `uID`, `status_post`, `privacy_post`, `image`, `caption`, `date` FROM `post`,user WHERE user.user_ID = post.uID and uID = ? ORDER BY `date` DESC
 router.get('/newfeed', auth.verifyToken, (req, res) => {
     jwt.verify(req.token, 'secretkey', (err, authData) => {
         let uid = authData.user
@@ -212,7 +212,6 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
             let data1 = new Array()
                    
             arr.forEach(element =>{
-                
                 pool.query('SELECT user.username,user.nickName,user.profile_img ,`post_ID`, `uID`, `status_post`, `privacy_post`, `image`, `caption`, `date` FROM `post`,user WHERE user.user_ID = post.uID and uID = ? ORDER BY `date` DESC',[element],(err,results,field) =>{
                     if(results != ""){
                         results.forEach(e =>{
@@ -221,17 +220,21 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
                         })
                     }
 
+
                     if(element == arr[arr.length-1]){
                         data1.sort(function(a,b){
                             // Turn your strings into dates, and then subtract them
                             // to get a value that is either negative, positive, or zero.
                             return new Date(b.date) - new Date(a.date);
                           });
+
                         res.json({
                             feed: data1
                         })
                        
                     }
+
+
                 })
             })
             
@@ -241,7 +244,21 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
     })
 })
 
+/*
+if(element == arr[arr.length-1]){
+                        data1.sort(function(a,b){
+                            // Turn your strings into dates, and then subtract them
+                            // to get a value that is either negative, positive, or zero.
+                            return new Date(b.date) - new Date(a.date);
+                          });
 
+                        res.json({
+                            feed: data1
+                        })
+                       
+                    }
+
+*/
 //##########################################-สำหรับตอนค้นหา-###################################################
 router.get('/countMyPostUser/:id',(req,res)=>{
     let userID = req.params.id
@@ -319,6 +336,48 @@ router.post('/deletePost',auth.verifyToken,(req,res) =>{
             if(results.affectedRows != 0){
                 return res.json({success: 1})
             }
+        })
+    })
+})
+
+router.post('commentPost',auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,'secretkey',(err,authData) =>{
+        if(err){
+            res.json({message:"something this wrong!!"})
+        }
+        let post = req.body
+        let uid = authData.user
+
+        pool.query("INSERT INTO `commentpost` (`uID`, `pID`, `caption`, `date`) VALUES (?, ?, ?, now())",[uid,post.post_ID,post.caption], (error,results,field) =>{
+            if (error) {
+
+                return res.json({
+                    success: 0,
+                    message: error
+                })
+            }
+            return res.json({
+                success: 1
+
+            })
+        })
+    })
+})
+
+router.get('getCommentPost/:pid',auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,'secretkey',(err,authData) =>{
+        if(err){
+            res.json({message:"something this wrong!!"})
+        }
+        let pid = req.params.pid
+        let uid = authData.user
+        pool.query("SELECT user.user_ID,user.username,user.nickName,post.post_ID,commentpost.caption,commentpost.date FROM user,post,commentpost WHERE post.post_ID = commentpost.pID and user.user_ID = commentpost.uID and post.post_ID = ?",[pid],(error,results,field) =>{
+            if(error){
+                res.json({message: "selected error"})
+            }
+            return res.json({
+                comment: results
+            })
         })
     })
 })
