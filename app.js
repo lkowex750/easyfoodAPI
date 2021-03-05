@@ -6,6 +6,10 @@ const followRoute = require('./api/routes/follow')
 const bodyParser = require('body-parser')
 const path = require('path')
 
+//Project
+
+const userRoutePJ = require('./api/routes/PJ_users')
+
 
 
 // app.use(bodyParser.json())
@@ -36,6 +40,8 @@ app.use('/users',userRoute)
 app.use('/post',postRoute)
 app.use('/follow',followRoute)
 
+//Project
+app.use('/pjUsers',userRoutePJ)
 
 
 module.exports = app

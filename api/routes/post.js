@@ -151,16 +151,20 @@ router.post('/likepost', auth.verifyToken, (req, res) => {
                         })
                     } else {
                         pool.query('select count(like_ID) as countLike from likepost where pID = ?', [pid], (error, result, field) => {
-                            if (error) {
-                                res.json({ message: "err!" })
-                            } else if (result == "") {
-                                res.json({ message: "no one" })
-                            }
-                            return res.json({
-                                success: 1,
-                                countLike: result[0].countLike
-
+                            pool.query("select count(like_ID) as countMyLiked from `likepost` WHERE `pID` = ? and uID = ?",[pid,uid],(err,results1,field)=>{
+                                if (error) {
+                                    res.json({ message: "err!" })
+                                } else if (result == "") {
+                                    res.json({ message: "no one" })
+                                }
+                                return res.json({
+                                    success: 1,
+                                    countLike: result[0].countLike,
+                                    countMyLiked: results1[0].countMyLiked
+    
+                                })
                             })
+                            
                         })
 
                     }
@@ -173,17 +177,22 @@ router.post('/likepost', auth.verifyToken, (req, res) => {
                             message: "delete this wrong!"
                         })
                     }
-                    pool.query('select count(like_ID) as countLike from likepost where pID = ?', [pid], (error, result, field) => {
-                        if (error) {
-                            res.json({ message: "err!" })
-                        } else if (result == "") {
-                            res.json({ message: "no one" })
-                        }
-                        return res.json({
-                            success: 1,
-                            countLike: result[0].countLike
-
+                    pool.query('select count(like_ID) as countLike,uID from likepost where pID = ?', [pid], (error, result, field) => {
+                        pool.query("select count(like_ID) as countMyLiked from `likepost` WHERE `pID` = ? and uID = ?",[pid,uid],(err,results1,field)=>{
+                            if (error) {
+                                res.json({ message: "err!" })
+                            } else if (result == "") {
+                                res.json({ message: "no one" })
+                            }
+                            return res.json({
+                                success: 1,
+                                countLike: result[0].countLike,
+                                countMyLiked: results1[0].countMyLiked
+                                
+    
+                            })
                         })
+                        
                     })
 
                 })
@@ -378,6 +387,25 @@ router.get('/getCommentPost/:pid',auth.verifyToken,(req,res) =>{
             return res.json({
                 comment: results
             })
+        })
+    })
+})
+
+router.get('/getLikePost/:pid',auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,'secretkey',(err,authData) =>{
+        if(err){
+            res.json({message:"something this wrong!!"})
+        }
+        let uid = authData.user
+        let pid = req.params.pid
+        pool.query("SELECT COUNT(`like_ID`)  as countLike,uID FROM `likepost` WHERE `pID` = ?",[pid],(error,results,field) =>{
+            pool.query("select count(like_ID) as countMyLiked from `likepost` WHERE `pID` = ? and uID = ?",[pid,uid],(err,results1,field)=>{
+                return res.json({
+                    countLike: results[0].countLike,
+                    user_ID: results1[0].countMyLiked
+                })
+            })
+            
         })
     })
 })
