@@ -66,10 +66,16 @@ router.get('/countFollowing',auth.verifyToken,(req,res)=>{
                     message: "something this wrong from selected!"
                 })
             }
-
-            return res.json({
-                countMyFollowing: results[0].countMyFollowing
+            pool.query("select user.user_ID,user.username,user.nickName,user.profile_img  from user,follow where user.user_ID = follow.following_ID AND follow.my_ID = ?",[myid],(err,results1,field)=>{
+                return res.json({
+                    countMyFollowing: results[0].countMyFollowing,
+                    following: results1
+                })
             })
+
+            // return res.json({
+            //     countMyFollowing: results[0].countMyFollowing
+            // })
 
         })
     })
@@ -90,16 +96,24 @@ router.get('/countFollower',auth.verifyToken,(req,res)=>{
                     message: "something this wrong from selected!"
                 })
             }
-
-            return res.json({
-                countMyFollower: results[0].countMyFollower
+            pool.query("select user.user_ID,user.username,user.nickName,user.profile_img  from user,follow where user.user_ID = follow.my_ID AND follow.following_ID = ?",[myid],(err,results1,field)=>{
+                return res.json({
+                    countMyFollower: results[0].countMyFollower,
+                    follower: results1
+                })
             })
+
+            // return res.json({
+            //     countMyFollower: results[0].countMyFollower
+            // })
 
         })
     })
 })
 
 //##########################################-สำหรับตอนค้นหา-###################################################
+
+//กำลังติดตาม
 router.get('/countFollowingUser/:id',(req,res)=>{
     let userID = req.params.id
     pool.query("select count(follow_ID) as countMyFollowing from follow where my_ID = ?",[userID],(error,results,field)=>{
@@ -108,14 +122,21 @@ router.get('/countFollowingUser/:id',(req,res)=>{
                 message: "something this wrong from selected!"
             })
         }
-
-        return res.json({
-            countMyFollowing: results[0].countMyFollowing
+        pool.query("select user.user_ID,user.username,user.nickName,user.profile_img  from user,follow where user.user_ID = follow.following_ID AND follow.my_ID = ?",[userID],(err,results1,field)=>{
+            return res.json({
+                countMyFollowing: results[0].countMyFollowing,
+                following: results1
+            })
         })
+
+        // return res.json({
+        //     countMyFollowing: results[0].countMyFollowing
+        // })
 
     })
 })
 
+//ผู้ติดตาม
 router.get('/countFollowerUser/:id',(req,res)=>{
     let userID = req.params.id
     //จำนวนทีติดตามเรา
@@ -125,10 +146,15 @@ router.get('/countFollowerUser/:id',(req,res)=>{
                 message: "something this wrong from selected!"
             })
         }
-
-        return res.json({
-            countMyFollower: results[0].countMyFollower
+        pool.query("select user.user_ID,user.username,user.nickName,user.profile_img  from user,follow where user.user_ID = follow.my_ID AND follow.following_ID = ?",[userID],(err,results1,field)=>{
+            return res.json({
+                countMyFollower: results[0].countMyFollower,
+                follower: results1
+            })
         })
+
+
+       
 
     })
 })
@@ -168,8 +194,8 @@ router.get("/randFollow",auth.verifyToken,(req,res) =>{
             })
         }
         let myid = authData.user
-        pool.query("SELECT DISTINCT user.user_ID,user.username,user.nickName,user.profile_img FROM user,follow WHERE follow.my_ID != ? and user.user_ID != ? ORDER BY RAND() LIMIT 5"
-        ,[myid,myid,myid],(error,results,field) =>{
+        pool.query("SELECT DISTINCT user.user_ID,user.username,user.nickName,user.profile_img FROM user,follow WHERE user.user_ID != ? ORDER BY RAND() LIMIT 10"
+        ,[myid],(error,results,field) =>{
             if(error){
                 res.json({
                     message: error
@@ -181,4 +207,6 @@ router.get("/randFollow",auth.verifyToken,(req,res) =>{
         })
     })
 })
+
+
 module.exports = router
