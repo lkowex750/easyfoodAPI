@@ -380,7 +380,7 @@ router.get('/getCommentPost/:pid',auth.verifyToken,(req,res) =>{
         }
         let pid = req.params.pid
         let uid = authData.user
-        pool.query("SELECT user.user_ID,user.username,user.nickName,post.post_ID,commentpost.caption,commentpost.date FROM user,post,commentpost WHERE post.post_ID = commentpost.pID and user.user_ID = commentpost.uID and post.post_ID = ?",[pid],(error,results,field) =>{
+        pool.query("SELECT user.user_ID,user.username,user.nickName,user.profile_img,post.post_ID,commentpost.caption,commentpost.date FROM user,post,commentpost WHERE post.post_ID = commentpost.pID and user.user_ID = commentpost.uID and post.post_ID = ?",[pid],(error,results,field) =>{
             if(error){
                 res.json({message: "selected error"})
             }
