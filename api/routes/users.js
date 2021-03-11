@@ -474,6 +474,50 @@ router.get('/convertNameToUsername/:nickname', (req, res) => {//สำหรั�
     })
 })
 //===============================================select profileUser============================================
+router.post('/loginFacebook',(req,res) =>{
+    let body = req.body
+   
+    pool.query("SELECT COUNT(`user_ID`) as checkID FROM `user` WHERE `username` = ?",[body.userID],(err,results,fields) =>{
+       
+        if(results[0]['checkID']== 0){
+            
+            pool.query("INSERT INTO `user` (`user_ID`, `username`, `password`, `fullName`, `nickName`, `status`, `profile_img`) VALUES (NULL, ?, 'facebook', ?, ?, 1, ?)",[body.userID,body.name,body.name,body.profile_fbimg],(error,resultsIn,fields) =>{
+                if (error) {
+                    if (error.errno == 1062) {
+                        return res.json({
+                            success: 0,
+                            message: "username must be unique"
+                        })
+                    }
+                    return res.json({
+                        success: 0,
+                        message: error
+                    })
+                }
+                pool.query("SELECT * FROM `user` WHERE `username` = ?",[body.userID],(err,results1,fields) =>{
+                    jwt.sign({ user: results1[0].user_ID }, 'secretkey', (err, token) => {
+                        return res.json({
+                            success: 1,
+                            token
+                        })
+                    })
+                })
 
+            })
+        }
+        
+        else{
+            pool.query("SELECT * FROM `user` WHERE `username` = ?",[body.userID],(err,results1,fields) =>{
+                jwt.sign({ user: results1[0].user_ID }, 'secretkey', (err, token) => {
+                    return res.json({
+                        success: 1,
+                        token
+                    })
+                })
+            })
+        }
+
+    })
+})
 
 module.exports = router

@@ -219,7 +219,7 @@ router.get('/newfeed', auth.verifyToken, (req, res) => {
             })
 
             let data1 = new Array()
-                   
+                  
             arr.forEach(element =>{
                 pool.query('SELECT user.username,user.nickName,user.profile_img ,`post_ID`, `uID`, `status_post`, `privacy_post`, `image`, `caption`, `date` FROM `post`,user WHERE user.user_ID = post.uID and uID = ? ORDER BY `date` DESC',[element],(err,results,field) =>{
                     if(results != ""){
