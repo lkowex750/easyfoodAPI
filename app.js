@@ -9,6 +9,7 @@ const path = require('path')
 //Project
 
 const userRoutePJ = require('./api/routes/PJ_users')
+const postRoutePJ = require('./api/routes/PJ_post')
 
 
 
@@ -25,7 +26,8 @@ app.use(bodyParser.urlencoded({
 
 app.use('/uploads',express.static(__dirname + '/uploads'))
 app.use('/uploadProfile',express.static(__dirname + '/uploadProfile'))
-
+app.use('/uploadProfilePj',express.static(__dirname + '/uploadProfilePj'))
+app.use('/uploadFile',express.static(__dirname + '/uploadFile'))
 app.use(function(req, res, next) {
 
     res.header("Access-Control-Allow-Origin", "*");
@@ -42,6 +44,7 @@ app.use('/follow',followRoute)
 
 //Project
 app.use('/pjUsers',userRoutePJ)
+app.use('/pjPost',postRoutePJ)
 
 
 module.exports = app

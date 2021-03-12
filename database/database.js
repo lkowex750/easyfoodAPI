@@ -7,9 +7,9 @@ let databaseLocalhost = "easyfood"
 const pool = createPool({
     host : "localhost",
     user : "easyfood",
-    password : passServer,
+    password : passLocalhost,
     //Ase%31d2
-    database : databaseServer,
+    database : databaseLocalhost,
     //comsci_easyfood
     connectionLimit : 10
 })
