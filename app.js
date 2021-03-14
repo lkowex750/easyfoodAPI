@@ -26,8 +26,12 @@ app.use(bodyParser.urlencoded({
 
 app.use('/uploads',express.static(__dirname + '/uploads'))
 app.use('/uploadProfile',express.static(__dirname + '/uploadProfile'))
+
 app.use('/uploadProfilePj',express.static(__dirname + '/uploadProfilePj'))
-app.use('/uploadFile',express.static(__dirname + '/uploadFile'))
+app.use('/uploadHowto',express.static(__dirname + '/uploadHowto'))
+app.use('/uploadIngredients_file',express.static(__dirname + '/uploadIngredients_file'))
+app.use('/uploadPost',express.static(__dirname + '/uploadPost'))
+
 app.use(function(req, res, next) {
 
     res.header("Access-Control-Allow-Origin", "*");
