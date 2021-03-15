@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken')
 
 var auth = require('../../check-auth/auth')
 var key = "easycook"
-let pathHttp = "http://localhost:3000" + '/' 
+let pathHttp = "https://apifood.comsciproject.com" + '/' 
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
