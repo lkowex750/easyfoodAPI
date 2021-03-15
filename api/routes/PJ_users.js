@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken')
 
 var auth = require('../../check-auth/auth')
 var key = "easycook"
+let pathHttp = "http://localhost:3000" + '/' 
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -39,10 +40,13 @@ const upload = multer({
 
 router.post("/signup",(req,res) =>{
     let body = req.body
+    //console.log()
     body.password = passwordHash.generate(body.password)
-    let img = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
+    //let img = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
+    let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
     let alias = "ท่านสมาชิก"
-    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)",[body.email,body.password,body.name_surname,alias,img],(err,results,fields) =>{
+    
+    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)",[body.email,body.password,body.name_surname,alias,path],(err,results,fields) =>{
         if (err) {
             if (err.errno == 1062) {
                 return res.json({
@@ -55,15 +59,129 @@ router.post("/signup",(req,res) =>{
                 message: err
             })
         }
-        return res.json({
-            success: 1,
-            data: results,
+        pool.query("select `user_ID` from `pj_user` where email = ? and password = ?",[body.email,body.password],(err,results1,field) =>{
+            if(err){
+                res.json({
+                    message :err,
+                    success : 0
 
+                })
+            }
+
+            jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
+                return res.json({
+                    success: 1,
+                    token
+                })
+            })
         })
     })
 
 
 
+})
+
+router.post("/signupNewStep1",(req,res) =>{
+    let body = req.body
+    //console.log()
+    body.password = passwordHash.generate(body.password)
+    //let img = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
+    let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
+    let alias = "ท่านสมาชิก"
+    
+    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)",[body.email,body.password,body.email,alias,path],(err,results,fields) =>{
+        if (err) {
+            if (err.errno == 1062) {
+                return res.json({
+                    success: 0,
+                    message: "อีเมล "+body.email+ " ถูกใช้งานแล้ว"
+                })
+            }
+            return res.json({
+                success: 0,
+                message: err
+            })
+        }
+        pool.query("select `user_ID` from `pj_user` where email = ? and password = ?",[body.email,body.password],(err,results1,field) =>{
+            if(err){
+                res.json({
+                    message :err,
+                    success : 0
+
+                })
+            }
+
+            jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
+                return res.json({
+                    success: 1,
+                    token
+                })
+            })
+        })
+    })
+})
+
+router.post("/signupNewStep2",upload.single("profile_image"),(req,res) =>{
+    let body = req.body
+    let path = pathHttp + req.file.path
+    jwt.verify(body.token,key,(err,authData) =>{
+        if(err){res.json({success: 0,message:err})}
+        let uid = authData.user
+     
+        pool.query("update `pj_user` set `profile_image`=? where user_ID = ?",[path,uid],(err,results,field) =>{
+            if(err){
+                res.json({
+                    message: err,
+                    success : 0
+                })
+            }
+            if(results.affectedRows == 1){
+                return res.json({
+                    success: 1
+                })
+            }else{
+                return res.json({
+                    success : 0
+                })
+            }
+        })
+    })
+})
+
+router.post("/signupNewStep3",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({success: 0,message:err})}
+        let uid = authData.user
+        let body = req.body
+        pool.query("select * from pj_user where user_ID = ?",[uid],(err,results,field) =>{
+
+            let oldData = results[0]
+            if (results == "") {
+                return res.json({
+                    success: 0,
+                    message: "nodata"
+                })
+            }
+
+            let jsonOldData = JSON.parse(JSON.stringify(oldData))
+            let newData = mergeJSON.merge(jsonOldData, body)
+
+            pool.query("update `pj_user` set `name_surname`=?, `alias_name` = ? where user_ID = ?",[newData.name_surname,newData.alias_name,uid],(err,results1,field) =>{
+                if(err){
+                    res.json({
+                        message: err,
+                        success : 0
+                    })
+                }
+                else{
+                    return res.json({
+                        success : 1
+                    })
+                }
+            })
+        })
+        
+    })
 })
 
 router.post("/signin",(req,res) =>{
