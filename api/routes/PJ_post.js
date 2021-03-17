@@ -9,6 +9,8 @@ const jwt = require('jsonwebtoken')
 var auth = require('../../check-auth/auth')
 const { json } = require('body-parser')
 var key = "easycook"
+//https://apifood.comsciproject.com
+//http://localhost:3000
 let pathHttp = "https://apifood.comsciproject.com" + '/' 
 
 const storageHowto = multer.diskStorage({
@@ -126,12 +128,14 @@ router.post("/createPost",uploadRecipe.single("image"),(req,res) =>{
         }
 
         let uid = authData.user
-        pool.query("INSERT INTO `pj_recipe` (`user_ID`, `recipe_name`, `image`, `date`) VALUES (?, ?, ?, now())",[uid,body.recipe_name,path],(error,results,field) =>{
+        //console.log(parseFloat(body.price))
+        pool.query("INSERT INTO `pj_recipe` (`user_ID`, `recipe_name`, `image`, `date`,`price`) VALUES (?, ?, ?, now(),?)",[uid,body.recipe_name,path,body.price],(error,results,field) =>{
             if(error){
                 res.json({
-                    message: err
+                    message: error
                 })
             }
+           
 
             if(results.affectedRows == 1){
                 pool.query("SELECT `rid` FROM `pj_recipe` WHERE `user_ID` = ? ORDER BY `rid` DESC LIMIT 1",[uid],(error,result,field) =>{
@@ -325,7 +329,170 @@ router.get("/myRecipeHowto/:rid",auth.verifyToken,(req,res) =>{
     })
 })
 
+router.post("/editRecipePost",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){
+            res.json({message:err})
+        }
+        let body = req.body
+        let uid = authData.user
 
+        pool.query("update pj_recipe set recipe_name = ? ,image = ? , date = now() ,price = ? where user_ID = ? and rid = ?",[body.recipe_name,body.image,body.price,uid,body.rid],(err,result,field) =>{
+            if(err){
+                res.json({message: err})
+            }
+
+            res.json({
+                success: 1
+
+            })
+        })
+
+
+        
+    })
+})
+
+router.post("/addImageRecipePost",uploadRecipe.single("image"),(req,res) =>{
+    let body = req.body
+    let path = pathHttp+req.file.path
+    jwt.verify(body.token,key,(err,authData) =>{
+        if(err){res,json({message: err})}
+
+        return res.json({
+            path: path
+        })
+    })
+})
+
+router.post("/editHowto",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){
+            res.json({message: err})
+        }
+
+        let body = req.body
+        //console.log(body.step)
+        let loopCount = 0
+        for(var i=0;i<body.step.length;i++){
+            
+            if(body.howto_ID[i] != null){
+                //console.log("update")
+                 pool.query("UPDATE `pj_howto` SET `description`=?,`step`=?,`path_file`=?,`type_file`=? where `howto_ID` = ? AND `rid` = ?",[body.description[i],body.step[i],body.path_file[i],body.type_file[i],body.howto_ID[i],body.recipe_ID],(error,result,field) =>{
+                     if(err){
+                         res.json({
+                             message:err
+                         })
+                     }
+                     //console.log(result)
+                     
+                 })
+                 loopCount+=1
+                 
+            }else{
+                //console.log("insert")
+                pool.query("INSERT INTO `pj_howto` (`rid`, `description`, `step`, `path_file`, `type_file`) VALUES (?, ?, ?, ?, ?)",[body.recipe_ID,body.description[i],body.step[i],body.path_file[i],body.type_file[i]],(error,result,field) =>{
+                    if(err){
+                        res.json({
+                            message:err
+                        })
+                    }
+                })
+
+                loopCount+=1
+                
+            }
+
+            console.log(body.step.length)
+
+            if(loopCount == body.step.length){
+                return res.json({
+                    success : 1
+                })
+            }
+          
+        }
+
+    })
+})
+
+router.post("/editIngredient",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message:err})}
+        let body = req.body
+        let countLoop = 0
+        for(var i=0;i<body.step.length;i++){
+            if(body.ingredients_ID[i] != null){
+                pool.query("UPDATE `pj_ingredients` SET `ingredientName`=?,`amount`=?,`step`=? WHERE `ingredients_ID` = ? AND `rid` = ?",[body.ingredientName[i],body.amount[i],body.step[i],body.ingredients_ID[i],body.recipe_ID],(error,result,field) =>{
+                    if(error){res.json({message:error})}
+                    
+                })
+                countLoop+=1
+            }else{
+                
+                pool.query("INSERT INTO `pj_ingredients` (`rid`, `ingredientName`, `amount`, `step`) VALUES (?, ?, ?, ?)",[body.recipe_ID,body.ingredientName[i],body.amount[i],body.step[i]],(error,result,field) =>{
+                    if(error){res.json({message:error})}
+                    
+                })
+                countLoop+=1
+            }
+
+            if(countLoop == body.step.length){
+                return res.json({
+                    success : 1
+                })
+            }
+        }
+    })
+})
+
+router.post("/deleteIngredient",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message:err})}
+        let body = req.body
+        pool.query("select * from pj_ingredients where ingredients_ID = ?",[body.ingredients_ID],(error,result,filed) =>{
+            if(error){res.json({message:error})}
+
+            if(result[0] == ""){
+                return res.json({success: 1})
+            }else{
+                pool.query("DELETE FROM `pj_ingredients` WHERE `ingredients_ID` = ? and `rid` = ?",[body.ingredients_ID,body.recipe_ID],(error,result,field) =>{
+                    if(error){res.json({message:error})}
+
+                    if(result.affectedRows == 1){
+                        res.json({
+                            success: 1
+                        })
+                    }
+                })
+            }
+        })
+    })
+})
+
+router.post("/deleteHowto",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message:err})}
+        let body = req.body
+        pool.query("select * from pj_howto where howto_ID = ?",[body.howto_ID],(error,result,filed) =>{
+            if(error){res.json({message:error})}
+
+            if(result[0] == ""){
+                return res.json({success: 1})
+            }else{
+                pool.query("DELETE FROM `pj_howto` WHERE `howto_ID` = ? and `rid` = ?",[body.howto_ID,body.recipe_ID],(error,result,field) =>{
+                    if(error){res.json({message:error})}
+
+                    if(result.affectedRows == 1){
+                        res.json({
+                            success: 1
+                        })
+                    }
+                })
+            }
+        })
+    })
+})
 
 
 
