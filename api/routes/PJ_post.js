@@ -494,6 +494,29 @@ router.post("/deleteHowto",auth.verifyToken,(req,res) =>{
     })
 })
 
+router.get("/newfeeds",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){
+            return res.json({message:err})
+        }
+
+        let uid = authData.user
+        pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid , pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID AND pj_user.user_ID = ?",[uid],(error,result,field) =>{
+            if(error){
+                res.json({
+                    message: error
+                })
+            }
+
+            return res.json({
+                success: 1,
+                feeds: result
+            })
+        })
+
+    })
+})
+
 
 
 
