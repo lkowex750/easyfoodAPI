@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken')
 
 var auth = require('../../check-auth/auth')
 var key = "easycook"
-let pathHttp = "https://apifood.comsciproject.com" + '/' 
+let pathHttp = "https://apifood.comsciproject.com" + '/'
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -38,20 +38,20 @@ const upload = multer({
 
 
 
-router.post("/signup",(req,res) =>{
+router.post("/signup", (req, res) => {
     let body = req.body
     //console.log()
     body.password = passwordHash.generate(body.password)
     //let img = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
     let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
     let alias = "ท่านสมาชิก"
-    
-    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)",[body.email,body.password,body.name_surname,alias,path],(err,results,fields) =>{
+
+    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)", [body.email, body.password, body.name_surname, alias, path], (err, results, fields) => {
         if (err) {
             if (err.errno == 1062) {
                 return res.json({
                     success: 0,
-                    message: "อีเมล "+body.email+ " ถูกใช้งานแล้ว"
+                    message: "อีเมล " + body.email + " ถูกใช้งานแล้ว"
                 })
             }
             return res.json({
@@ -59,101 +59,101 @@ router.post("/signup",(req,res) =>{
                 message: err
             })
         }
-        pool.query("select `user_ID` from `pj_user` where email = ? and password = ?",[body.email,body.password],(err,results1,field) =>{
-            if(err){
-                res.json({
-                    message :err,
-                    success : 0
-
-                })
-            }
-
-            jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
-                return res.json({
-                    success: 1,
-                    token
-                })
-            })
-        })
-    })
-
-
-
-})
-
-router.post("/signupNewStep1",(req,res) =>{
-    let body = req.body
-    //console.log()
-    body.password = passwordHash.generate(body.password)
-    //let img = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
-    let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
-    let alias = "ท่านสมาชิก"
-    
-    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)",[body.email,body.password,body.email,alias,path],(err,results,fields) =>{
-        if (err) {
-            if (err.errno == 1062) {
-                return res.json({
-                    success: 0,
-                    message: "อีเมล "+body.email+ " ถูกใช้งานแล้ว"
-                })
-            }
-            return res.json({
-                success: 0,
-                message: err
-            })
-        }
-        pool.query("select `user_ID` from `pj_user` where email = ? and password = ?",[body.email,body.password],(err,results1,field) =>{
-            if(err){
-                res.json({
-                    message :err,
-                    success : 0
-
-                })
-            }
-
-            jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
-                return res.json({
-                    success: 1,
-                    token
-                })
-            })
-        })
-    })
-})
-
-router.post("/signupNewStep2",upload.single("profile_image"),(req,res) =>{
-    let body = req.body
-    let path = pathHttp + req.file.path
-    jwt.verify(body.token,key,(err,authData) =>{
-        if(err){res.json({success: 0,message:err})}
-        let uid = authData.user
-     
-        pool.query("update `pj_user` set `profile_image`=? where user_ID = ?",[path,uid],(err,results,field) =>{
-            if(err){
+        pool.query("select `user_ID` from `pj_user` where email = ? and password = ?", [body.email, body.password], (err, results1, field) => {
+            if (err) {
                 res.json({
                     message: err,
-                    success : 0
+                    success: 0
+
                 })
             }
-            if(results.affectedRows == 1){
+
+            jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
+                return res.json({
+                    success: 1,
+                    token
+                })
+            })
+        })
+    })
+
+
+
+})
+
+router.post("/signupNewStep1", (req, res) => {
+    let body = req.body
+    //console.log()
+    body.password = passwordHash.generate(body.password)
+    //let img = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
+    let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
+    let alias = "ท่านสมาชิก"
+
+    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)", [body.email, body.password, body.email, alias, path], (err, results, fields) => {
+        if (err) {
+            if (err.errno == 1062) {
+                return res.json({
+                    success: 0,
+                    message: "อีเมล " + body.email + " ถูกใช้งานแล้ว"
+                })
+            }
+            return res.json({
+                success: 0,
+                message: err
+            })
+        }
+        pool.query("select `user_ID` from `pj_user` where email = ? and password = ?", [body.email, body.password], (err, results1, field) => {
+            if (err) {
+                res.json({
+                    message: err,
+                    success: 0
+
+                })
+            }
+
+            jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
+                return res.json({
+                    success: 1,
+                    token
+                })
+            })
+        })
+    })
+})
+
+router.post("/signupNewStep2", upload.single("profile_image"), (req, res) => {
+    let body = req.body
+    let path = pathHttp + req.file.path
+    jwt.verify(body.token, key, (err, authData) => {
+        if (err) { res.json({ success: 0, message: err }) }
+        let uid = authData.user
+
+        pool.query("update `pj_user` set `profile_image`=? where user_ID = ?", [path, uid], (err, results, field) => {
+            if (err) {
+                res.json({
+                    message: err,
+                    success: 0
+                })
+            }
+            if (results.affectedRows == 1) {
                 return res.json({
                     success: 1
                 })
-            }else{
+            } else {
                 return res.json({
-                    success : 0
+                    success: 0
                 })
             }
         })
     })
 })
 
-router.post("/signupNewStep3",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({success: 0,message:err})}
+router.post("/signupNewStep3", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ success: 0, message: err }) }
         let uid = authData.user
         let body = req.body
-        pool.query("select * from pj_user where user_ID = ?",[uid],(err,results,field) =>{
+        pool.query("select * from pj_user where user_ID = ?", [uid], (err, results, field) => {
 
             let oldData = results[0]
             if (results == "") {
@@ -166,28 +166,28 @@ router.post("/signupNewStep3",auth.verifyToken,(req,res) =>{
             let jsonOldData = JSON.parse(JSON.stringify(oldData))
             let newData = mergeJSON.merge(jsonOldData, body)
 
-            pool.query("update `pj_user` set `name_surname`=?, `alias_name` = ? where user_ID = ?",[newData.name_surname,newData.alias_name,uid],(err,results1,field) =>{
-                if(err){
+            pool.query("update `pj_user` set `name_surname`=?, `alias_name` = ? where user_ID = ?", [newData.name_surname, newData.alias_name, uid], (err, results1, field) => {
+                if (err) {
                     res.json({
                         message: err,
-                        success : 0
+                        success: 0
                     })
                 }
-                else{
+                else {
                     return res.json({
-                        success : 1
+                        success: 1
                     })
                 }
             })
         })
-        
+
     })
 })
 
-router.post("/signin",(req,res) =>{
+router.post("/signin", (req, res) => {
     let body = req.body
-   
-    pool.query("SELECT `password` FROM `pj_user` WHERE `email` = ?",[body.email],(err,results,fields) =>{
+
+    pool.query("SELECT `password` FROM `pj_user` WHERE `email` = ?", [body.email], (err, results, fields) => {
         if (err) {
             return res.json({
                 success: 0,
@@ -224,39 +224,39 @@ router.post("/signin",(req,res) =>{
 
 })
 
-router.get("/myAccount",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(error,authData) =>{
+router.get("/myAccount", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (error, authData) => {
         if (error) {
             res.json({
                 message: "something this wrong!"
-                
+
             })
         }
         let id = authData.user
 
-        pool.query("SELECT `user_ID`,`email`,`facebookID`,`name_surname`,`alias_name`,`user_status`,`access_status`,`balance`,`profile_image` FROM `pj_user` WHERE `user_ID` =? ",[id],(error,results,fields) =>{
-                res.json({
+        pool.query("SELECT `user_ID`,`email`,`facebookID`,`name_surname`,`alias_name`,`user_status`,`access_status`,`balance`,`profile_image` FROM `pj_user` WHERE `user_ID` =? ", [id], (error, results, fields) => {
+            res.json({
                 success: 1,
                 data: results
             })
         })
-        
+
     })
-    
+
 
 
 })
 
 //login with facebook
 
-router.post('/loginFacebook',(req,res) =>{
+router.post('/loginFacebook', (req, res) => {
     let body = req.body
-   
-    pool.query("SELECT COUNT(`user_ID`) as checkID FROM `pj_user` WHERE `facebookID` = ?",[body.userID],(err,results,fields) =>{
-       
-        if(results[0]['checkID']== 0){
-            
-            pool.query("INSERT INTO `pj_user` (`user_ID`, `facebookID`, `password`, `name_surname`, `alias_name`, `user_status`,`access_status`,`balance`, `profile_image`) VALUES (NULL, ?, 'facebook', ?, ?, 1, 1,0.00,?)",[body.userID,body.name_surname,body.alias_name,body.profile_image],(error,resultsIn,fields) =>{
+
+    pool.query("SELECT COUNT(`user_ID`) as checkID FROM `pj_user` WHERE `facebookID` = ?", [body.userID], (err, results, fields) => {
+
+        if (results[0]['checkID'] == 0) {
+
+            pool.query("INSERT INTO `pj_user` (`user_ID`, `facebookID`, `password`, `name_surname`, `alias_name`, `user_status`,`access_status`,`balance`, `profile_image`) VALUES (NULL, ?, 'facebook', ?, ?, 1, 1,0.00,?)", [body.userID, body.name_surname, body.alias_name, body.profile_image], (error, resultsIn, fields) => {
                 if (error) {
                     if (error.errno == 1062) {
                         return res.json({
@@ -269,7 +269,7 @@ router.post('/loginFacebook',(req,res) =>{
                         message: error
                     })
                 }
-                pool.query("SELECT * FROM `pj_user` WHERE `facebookID` = ?",[body.userID],(err,results1,fields) =>{
+                pool.query("SELECT * FROM `pj_user` WHERE `facebookID` = ?", [body.userID], (err, results1, fields) => {
                     jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
                         return res.json({
                             success: 1,
@@ -280,9 +280,9 @@ router.post('/loginFacebook',(req,res) =>{
 
             })
         }
-        
-        else{
-            pool.query("SELECT * FROM `pj_user` WHERE `facebookID` = ?",[body.userID],(err,results1,fields) =>{
+
+        else {
+            pool.query("SELECT * FROM `pj_user` WHERE `facebookID` = ?", [body.userID], (err, results1, fields) => {
                 jwt.sign({ user: results1[0].user_ID }, key, (err, token) => {
                     return res.json({
                         success: 1,
@@ -298,26 +298,26 @@ router.post('/loginFacebook',(req,res) =>{
 //update profile 
 //return path
 
-router.post("/uploadProfile",upload.single("profile_image"), (req, res) =>{
+router.post("/uploadProfile", upload.single("profile_image"), (req, res) => {
     let path = "http://localhost:3000" + '/' + req.file.path
     let body = req.body
 
-    jwt.verify(body.token,key,(error,authData) =>{
-        
+    jwt.verify(body.token, key, (error, authData) => {
+
         if (error) {
             res.json({
                 message: "something this wrong!"
-                
+
             })
         }
-        
-        pool.query("UPDATE `pj_user` SET `profile_image`= ?  WHERE `user_ID` = ?",[path,authData.user],(err,results,fields) =>{
-            if(err){
-                res.json({success: 0,message: err})
+
+        pool.query("UPDATE `pj_user` SET `profile_image`= ?  WHERE `user_ID` = ?", [path, authData.user], (err, results, fields) => {
+            if (err) {
+                res.json({ success: 0, message: err })
             }
 
-            else{
-                pool.query("SELECT `profile_image` FROM `pj_user` WHERE `user_ID` = ?",[authData.user],(err,results,fields)=>{
+            else {
+                pool.query("SELECT `profile_image` FROM `pj_user` WHERE `user_ID` = ?", [authData.user], (err, results, fields) => {
                     res.json({
                         success: 1,
                         profile_image: results[0]
@@ -325,22 +325,22 @@ router.post("/uploadProfile",upload.single("profile_image"), (req, res) =>{
                 })
             }
         })
-        
+
     })
 })
 
 //edit 
-router.post("/editProfileName",auth.verifyToken,(req,res)=>{
+router.post("/editProfileName", auth.verifyToken, (req, res) => {
     let body = req.body
-    jwt.verify(req.token,key,(error,authData) =>{
-        if(error){
+    jwt.verify(req.token, key, (error, authData) => {
+        if (error) {
             res.json({
                 message: error
             })
         }
 
         let id = authData.user
-        pool.query("SELECT * FROM `pj_user` WHERE `user_ID` = ?",[id],(err,results,fields) =>{
+        pool.query("SELECT * FROM `pj_user` WHERE `user_ID` = ?", [id], (err, results, fields) => {
             let oldData = results[0]
             if (results == "") {
                 return res.json({
@@ -351,27 +351,27 @@ router.post("/editProfileName",auth.verifyToken,(req,res)=>{
 
             let jsonOldData = JSON.parse(JSON.stringify(oldData))
             let newData = mergeJSON.merge(jsonOldData, body)
-            pool.query("UPDATE `pj_user` SET `name_surname`= ?,`alias_name`=? WHERE `user_ID` = ?",[newData.name_surname,newData.alias_name,id],(err,results,fields)=>{
+            pool.query("UPDATE `pj_user` SET `name_surname`= ?,`alias_name`=? WHERE `user_ID` = ?", [newData.name_surname, newData.alias_name, id], (err, results, fields) => {
                 if (err) {
                     return res.json({
                         success: 0,
                         message: err
                     })
                 }
-                if(results.affectedRows == 1){
-                    pool.query("SELECT `name_surname`,`alias_name` FROM `pj_user` WHERE `user_ID` = ?",[id],(err,results,fileds) =>{
-                      return  res.json({
+                if (results.affectedRows == 1) {
+                    pool.query("SELECT `name_surname`,`alias_name` FROM `pj_user` WHERE `user_ID` = ?", [id], (err, results, fileds) => {
+                        return res.json({
                             success: 1,
                             name_surname: results[0].name_surname,
                             alias_name: results[0].alias_name
                         })
                     })
-                }else{
-                   return res.json({
+                } else {
+                    return res.json({
                         success: 0
                     })
                 }
-              
+
             })
         })
     })
@@ -379,21 +379,21 @@ router.post("/editProfileName",auth.verifyToken,(req,res)=>{
 
 //cancleAccout
 
-router.post("/cancleAccout",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(error,authData) =>{
-        if(error){
+router.post("/cancleAccout", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (error, authData) => {
+        if (error) {
             res.json({
                 message: error
             })
         }
         let id = authData.user
-        pool.query("UPDATE `pj_user` SET `access_status`= 0 WHERE `user_ID` = ?",[id],(err,results,fields) =>{
-            if(err){
+        pool.query("UPDATE `pj_user` SET `access_status`= 0 WHERE `user_ID` = ?", [id], (err, results, fields) => {
+            if (err) {
                 res.json({
                     message: err
                 })
             }
-            if(results.affectedRows == 1){
+            if (results.affectedRows == 1) {
                 return res.json({
                     success: 1,
                     access_status: 0
@@ -404,11 +404,11 @@ router.post("/cancleAccout",auth.verifyToken,(req,res) =>{
 })
 
 //searchUser
-router.get("/searchUser/:data",auth.verifyToken,(req,res) =>{
-    
-    jwt.verify(req.token,key,(err,authData) =>{
+router.get("/searchUser/:data", auth.verifyToken, (req, res) => {
 
-        if(err){
+    jwt.verify(req.token, key, (err, authData) => {
+
+        if (err) {
             return res.json({
                 message: err
             })
@@ -416,51 +416,139 @@ router.get("/searchUser/:data",auth.verifyToken,(req,res) =>{
 
         let data = req.params.data
         console.log(data)
-       pool.query("SELECT `user_ID`,`name_surname`,`alias_name`,`profile_image` FROM `pj_user` WHERE `name_surname` LIKE concat(?,'%') OR `alias_name` LIKE concat(?,'%') ORDER BY `name_surname`,`alias_name` ASC",[data,data],(error,results,field) =>{
-           res.json({
-               data: results
-           })
-       })
+        pool.query("SELECT `user_ID`,`name_surname`,`alias_name`,`profile_image` FROM `pj_user` WHERE `name_surname` LIKE concat(?,'%') OR `alias_name` LIKE concat(?,'%') ORDER BY `name_surname`,`alias_name` ASC", [data, data], (error, results, field) => {
+            res.json({
+                data: results
+            })
+        })
 
-        
-     })
+
+    })
 })
 
 //Ban accout
 
-router.post("/banUser",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){
+router.post("/banUser", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) {
             return res.json({
                 message: err
             })
         }
         let id = authData.user
         let body = req.body
-        
-        pool.query("UPDATE `pj_user` SET `access_status` = 0 WHERE `user_ID` = ?",[body.user_ID],(err,results,fields) =>{
-            if(err){
+
+        pool.query("UPDATE `pj_user` SET `access_status` = 0 WHERE `user_ID` = ?", [body.user_ID], (err, results, fields) => {
+            if (err) {
                 res.json({
                     message: err
                 })
             }
-            if(results.affectedRows == 1){
-                pool.query("SELECT `name_surname` FROM `pj_user` WHERE `user_ID` = ?",[body.user_ID],(err,results,fields) =>{
+            if (results.affectedRows == 1) {
+                pool.query("SELECT `name_surname` FROM `pj_user` WHERE `user_ID` = ?", [body.user_ID], (err, results, fields) => {
                     return res.json({
                         success: 1,
-                        message: "Admin ได้ทำการแบน "+results[0].name_surname+" แล้วจ้า" 
+                        message: "Admin ได้ทำการแบน " + results[0].name_surname + " แล้วจ้า"
                     })
                 })
-                
+
             }
 
 
         })
-        
+
     })
 })
 
 
+router.get("/profileUser/:uid", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) {
+            return res.json({
+                message: err
+            })
+        }
+
+        let id = req.params.uid
+        pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.user_status,pj_user.profile_image FROM `pj_user` WHERE user_ID = ?", [id], (error, results, field) => {
+            if (error) {
+                res.json({
+                    message: error
+                })
+            }
+            else {
+
+                pool.query("SELECT `rid`,`recipe_name`, `image`, `date`, `price` FROM `pj_recipe` WHERE `user_ID` = ?", [id], (error, result1, field) => {
+                    if (error) {
+                        res.json({
+                            message: error
+                        })
+                    } else {
+                        //console.log(result1.length)
+
+                        if (result1.length != 0) {
+                            let countLoop = 0
+                            let score = []
+                            let data = []
+                            let recipe = []
+                            recipe.push(JSON.stringify(result1))
+
+                            for (var i = 0; i < result1.length; i++) {
+                                //console.log(result1[i].rid)
+
+                                pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [result1[i].rid], (error, resultScore, field) => {
+                                    if (error) {
+                                        res.json({
+                                            message: err
+                                        })
+                                    }
+                                    //console.log(resultScore[0].score)
+                                    countLoop += 1
+                                    if (resultScore[0].score != null) {
+                                        score.push(resultScore[0].score)
+                                    } else {
+                                        score.push(0)
+                                    }
+                                    let s = JSON.parse(recipe[0])
+                                    //console.log("asdasd  " + i)
+                                    //console.log(s[countLoop-1].rid)
+                                    //console.log("count "+countLoop+"  res1 "+result1.length)
+                                    //console.log("Score "+score[countLoop-1])
+                                    let newdata = {
+                                        rid: s[countLoop - 1].rid,
+                                        recipe_name: s[countLoop - 1].recipe_name,
+                                        image: s[countLoop - 1].image,
+                                        date: s[countLoop - 1].date,
+                                        price: s[countLoop - 1].price,
+                                        score: score[countLoop - 1]
+                                    }
+                                    data.push(newdata)
+                                    if (countLoop == result1.length) {
+                                        res.json({
+                                            profile: results[0],
+                                            recipePost: data
+                                        })
+                                    }
+                                })
+                            }
+
+                        } else {
+                            res.json({
+                                profile: results[0],
+                                recipePost: []
+                            })
+                        }
+
+                    }
+
+
+                })
+            }
+
+        })
+
+    })
+})
 
 
 
