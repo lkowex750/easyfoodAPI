@@ -567,6 +567,59 @@ router.get("/getPost/:rid",auth.verifyToken,(req,res) =>{
     })
 })
 
+//score//
+router.post("/score",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        let body = req.body
+        let uid = authData.user
+        //console.log(uid)
+        pool.query("SELECT `score_ID` FROM `pj_score` WHERE `user_ID` = ? AND `recipe_ID` = ?",[uid,body.recipe_ID],(error,results,field) =>{
+            if(error){res.json({message: error})}
+            else{
+                if(results != ""){      
+                    pool.query("UPDATE `pj_score` SET `score`= ? WHERE `score_ID` = ?",[body.score,results[0].score_ID],(error,resultScore,field) =>{
+                        if(error){res.json({message: error})}
+                        else{
+                            pool.query("SELECT AVG(`score`) as AVGscore FROM `pj_score` WHERE `recipe_ID` = ?",[body.recipe_ID],(error,resultAvg,field) =>{
+                                if(error){res.json({message: error})}
+                                else{
+                                    return res.json({
+                                        success: 1,
+                                        avgscore: resultAvg[0].AVGscore
+                                    })
+                                }
+                            })
+                        }
+                    })
+                }else{
+                    pool.query("INSERT INTO `pj_score` (`user_ID`, `recipe_ID`, `score`) VALUES (?, ?, ?)",[uid,body.recipe_ID,body.score],(error,resultScore,field) =>{
+                        if(error){res.json({message: error})}
+                        else{
+                            if(resultScore.affectedRows == 1){
+                                pool.query("SELECT AVG(`score`) as AVGscore FROM `pj_score` WHERE `recipe_ID` = ?",[body.recipe_ID],(error,resultAvg,field) =>{
+                                    if(error){res.json({message: error})}
+                                    else{
+                                        return res.json({
+                                            success: 1,
+                                            avgscore: resultAvg[0].AVGscore
+                                        })
+                                    }
+                                })
+                            }else{
+                                return res.json({
+                                    success: 0
+                                   
+                                })
+                            }
+                        }
+                    })
+                }
+            }
+        })
+    })
+})
+
 
 
 

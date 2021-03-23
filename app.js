@@ -10,7 +10,7 @@ const path = require('path')
 
 const userRoutePJ = require('./api/routes/PJ_users')
 const postRoutePJ = require('./api/routes/PJ_post')
-
+const followRoutePJ = require('./api/routes/PJ_follow')
 
 
 // app.use(bodyParser.json())
@@ -49,6 +49,6 @@ app.use('/follow',followRoute)
 //Project
 app.use('/pjUsers',userRoutePJ)
 app.use('/pjPost',postRoutePJ)
-
+app.use('/pjFollow',followRoutePJ)
 
 module.exports = app
