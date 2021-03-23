@@ -621,6 +621,41 @@ router.post("/score",auth.verifyToken,(req,res) =>{
 })
 
 
+//สองอันนี้ ถ้าตอนกดเข้าดูอันที่เลือกค่อยส่ง rid เข้า service getPost เอาเด้อ
+router.get("/searchIngredient/:name",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        else{
+            let uid = authData.user
+            let name = req.params.name
+            pool.query("SELECT  `rid`, `ingredientName` FROM `pj_ingredients` WHERE `ingredientName` LIKE concat(?,'%')",[name],(error,result,field) =>{
+                res.json({
+                    data: result
+                })
+            })
+        }
+    })
+})
+
+//searchRecipeName
+router.get("/searchRecipeName/:name",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        else{
+            let uid = authData.user
+            let name = req.params.name
+            pool.query("SELECT  `rid`,  `recipe_name`, `image` FROM `pj_recipe` WHERE `recipe_name` LIKE concat(?,'%') order by recipe_name",[name],(error,result,field) =>{
+                res.json({
+                    data: result
+                })
+            })
+        }
+    })
+})
+
+
+
+
 
 
 
