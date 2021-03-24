@@ -644,10 +644,47 @@ router.get("/searchRecipeName/:name",auth.verifyToken,(req,res) =>{
         else{
             let uid = authData.user
             let name = req.params.name
-            pool.query("SELECT  `rid`,  `recipe_name`, `image` FROM `pj_recipe` WHERE `recipe_name` LIKE concat(?,'%') order by recipe_name",[name],(error,result,field) =>{
-                res.json({
-                    data: result
-                })
+            pool.query("SELECT  pj_recipe.rid,  pj_recipe.recipe_name, pj_recipe.image ,pj_user.user_ID, pj_user.alias_name,pj_user.name_surname,pj_user.profile_image FROM `pj_recipe`, pj_user WHERE pj_user.user_ID = pj_recipe.user_ID AND  pj_recipe.recipe_name LIKE concat(?,'%') order by recipe_name",[name],(error,result,field) =>{
+                //console.log(result[0].rid)
+                let countLoop = 0
+                let data = []
+                let newData = []
+                result.forEach(element => {
+                    pool.query("SELECT AVG(`score`) as AVGscore FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resutlsScore,field) =>{
+
+                        if(err){res.json({message: err})}
+                        else{
+                            
+                            if(resutlsScore[0].AVGscore != null){
+                                data.push(resutlsScore[0].AVGscore)
+                            }else{
+                                data.push(0)
+                            }
+                            //alias_name,pj_user.name_surname,pj_user.profile_image
+                            newData.push({
+                                rid: result[countLoop].rid,
+                                recipe_name: result[countLoop].recipe_name,
+                                image: result[countLoop].image,
+                                user_ID: result[countLoop].user_ID,
+                                alias_name: result[countLoop].alias_name,
+                                name_surname: result[countLoop].name_surname,
+                                profile_image: result[countLoop].profile_image,
+                                score: data[countLoop]
+                            }) 
+                            //console.log(data)
+                           countLoop+=1
+
+                           if(countLoop == result.length){
+                                res.json({
+                                    data: newData
+                                })
+                           }
+                        }
+                    })
+                });
+                // res.json({
+                //     data: result
+                // })
             })
         }
     })
