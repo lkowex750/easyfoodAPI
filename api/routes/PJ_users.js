@@ -404,15 +404,15 @@ router.post("/cancleAccout", auth.verifyToken, (req, res) => {
 })
 
 //searchUser
-router.get("/searchUser/:data", auth.verifyToken, (req, res) => {
+router.get("/searchUser/:data",(req, res) => {
 
-    jwt.verify(req.token, key, (err, authData) => {
+    //jwt.verify(req.token, key, (err, authData) => {
 
-        if (err) {
-            return res.json({
-                message: err
-            })
-        }
+        // if (err) {
+        //     return res.json({
+        //         message: err
+        //     })
+        // }
 
         let data = req.params.data
         console.log(data)
@@ -423,7 +423,7 @@ router.get("/searchUser/:data", auth.verifyToken, (req, res) => {
         })
 
 
-    })
+    //})*
 })
 
 //Ban accout
@@ -461,13 +461,13 @@ router.post("/banUser", auth.verifyToken, (req, res) => {
 })
 
 
-router.get("/profileUser/:uid", auth.verifyToken, (req, res) => {
-    jwt.verify(req.token, key, (err, authData) => {
-        if (err) {
-            return res.json({
-                message: err
-            })
-        }
+router.get("/profileUser/:uid", (req, res) => {
+    //jwt.verify(req.token, key, (err, authData) => {
+        // if (err) {
+        //     return res.json({
+        //         message: err
+        //     })
+        // }
 
         let id = req.params.uid
         pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.user_status,pj_user.profile_image FROM `pj_user` WHERE user_ID = ?", [id], (error, results, field) => {
@@ -547,7 +547,7 @@ router.get("/profileUser/:uid", auth.verifyToken, (req, res) => {
 
         })
 
-    })
+    //})*
 })
 
 

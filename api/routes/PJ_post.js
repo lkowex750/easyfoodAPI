@@ -518,18 +518,18 @@ router.get("/newfeeds",auth.verifyToken,(req,res) =>{
 })
 
 //ใช้อันนี้ ตอนกดเข้า post
-router.get("/getPost/:rid",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){
-            res.json({
-                message: err
-            })
-        }
+router.get("/getPost/:rid",(req,res) =>{
+    //jwt.verify(req.token,key,(err,authData) =>{
+        // if(err){
+        //     res.json({
+        //         message: err
+        //     })
+        // }
 
-        let uid = authData.user
+        //let uid = authData.user
         let rid = req.params.rid
 
-        pool.query("SELECT `rid`, `user_ID`, `recipe_name`, `image`, `date`, `price` FROM `pj_recipe` WHERE `rid` = ? AND `user_ID` = ?",[rid,uid],(error,resultRecipe,field) =>{  
+        pool.query("SELECT `rid`, `user_ID`, `recipe_name`, `image`, `date`, `price` FROM `pj_recipe` WHERE `rid` = ? ",[rid],(error,resultRecipe,field) =>{  
             if(error){res.json({message: error })}       
             else{
                 pool.query("SELECT `ingredients_ID`, `ingredientName`, `amount`, `step` FROM `pj_ingredients` WHERE rid = ?",[rid],(error,resultIngred,field) =>{
@@ -564,7 +564,7 @@ router.get("/getPost/:rid",auth.verifyToken,(req,res) =>{
                 
             }
         })
-    })
+    //})*
 })
 
 //score//
@@ -622,27 +622,27 @@ router.post("/score",auth.verifyToken,(req,res) =>{
 
 
 //สองอันนี้ ถ้าตอนกดเข้าดูอันที่เลือกค่อยส่ง rid เข้า service getPost เอาเด้อ
-router.get("/searchIngredient/:name",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message: err})}
-        else{
-            let uid = authData.user
+router.get("/searchIngredient/:name",(req,res) =>{
+    //jwt.verify(req.token,key,(err,authData) =>{
+        //if(err){res.json({message: err})}
+      //  else{*
+           // let uid = authData.user
             let name = req.params.name
             pool.query("SELECT  `rid`, `ingredientName` FROM `pj_ingredients` WHERE `ingredientName` LIKE concat(?,'%')",[name],(error,result,field) =>{
                 res.json({
                     data: result
                 })
             })
-        }
-    })
+      //  }*
+  //  })*
 })
 
 //searchRecipeName
-router.get("/searchRecipeName/:name",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message: err})}
-        else{
-            let uid = authData.user
+router.get("/searchRecipeName/:name",(req,res) =>{
+    //jwt.verify(req.token,key,(err,authData) =>{
+       // if(err){res.json({message: err})}
+       // else{
+            //let uid = authData.user
             let name = req.params.name
             pool.query("SELECT  pj_recipe.rid,  pj_recipe.recipe_name, pj_recipe.image ,pj_user.user_ID, pj_user.alias_name,pj_user.name_surname,pj_user.profile_image FROM `pj_recipe`, pj_user WHERE pj_user.user_ID = pj_recipe.user_ID AND  pj_recipe.recipe_name LIKE concat(?,'%') order by recipe_name",[name],(error,result,field) =>{
                 //console.log(result[0].rid)
@@ -652,7 +652,7 @@ router.get("/searchRecipeName/:name",auth.verifyToken,(req,res) =>{
                 result.forEach(element => {
                     pool.query("SELECT AVG(`score`) as AVGscore FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resutlsScore,field) =>{
 
-                        if(err){res.json({message: err})}
+                        if(error){res.json({message: err})}
                         else{
                             
                             if(resutlsScore[0].AVGscore != null){
@@ -686,9 +686,11 @@ router.get("/searchRecipeName/:name",auth.verifyToken,(req,res) =>{
                 //     data: result
                 // })
             })
-        }
-    })
+        //}*
+    //})*
 })
+
+
 
 
 
