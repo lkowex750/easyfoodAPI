@@ -541,20 +541,26 @@ router.get("/getPost/:rid",(req,res) =>{
                                 pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?",[rid],(error,resultScore,field) =>{
                                     if(error){res.json({message: error})}
                                     else{
-
-                                        let newData = {
-                                            rid: resultRecipe[0].rid,
-                                            user_ID: resultRecipe[0].user_ID,
-                                            recipe_name: resultRecipe[0].recipe_name,
-                                            image: resultRecipe[0].image,
-                                            date: resultRecipe[0].date,
-                                            price: resultRecipe[0].price,
-                                            ingredient: resultIngred,
-                                            howto: resultHowto,
-                                            score: resultScore[0].score
-                                        }
-
-                                        return res.json(newData)
+                                        pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC",[rid],(error,resultsComm,filed) =>{
+                                            if(error){res.json({message: error})}
+                                            else{
+                                                let newData = {
+                                                    rid: resultRecipe[0].rid,
+                                                    user_ID: resultRecipe[0].user_ID,
+                                                    recipe_name: resultRecipe[0].recipe_name,
+                                                    image: resultRecipe[0].image,
+                                                    date: resultRecipe[0].date,
+                                                    price: resultRecipe[0].price,
+                                                    ingredient: resultIngred,
+                                                    howto: resultHowto,
+                                                    score: resultScore[0].score,
+                                                    comment: resultsComm
+                                                }
+        
+                                                return res.json(newData)
+                                            }
+                                        })
+                                        
                                     }
                                 })                           
                             }
@@ -689,6 +695,51 @@ router.get("/searchRecipeName/:name",(req,res) =>{
         //}*
     //})*
 })
+
+router.post("/commentPost",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        else{
+            let body = req.body
+            let uid = authData.user
+
+            pool.query("INSERT INTO `pj_comment` (`recipe_ID`, `user_ID`, `commentDetail`, `datetime`) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",[body.recipe_ID,uid,body.commentDetail],(error,result,field) =>{
+                if(error){res.json({message: error})}
+                else{
+                    if(result.affectedRows == 1){
+                        pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? AND pj_comment.user_ID = ? ORDER BY pj_comment.cid DESC LIMIT 1",[body.recipe_ID,uid],(error,resultComm,field) =>{
+                            if(error){res.json({message: error})}
+                            else{
+                                res.json({
+                                    success: 1,
+                                    comment: resultComm
+                                })
+                            }
+                        })
+                    }else{
+                        res.json({
+                            success : 0
+                        })
+                    }
+                    
+                }
+            })
+            //res.json(authData)
+        }
+        
+    })
+})
+
+router.get("/getComment/:rid",(req,res) =>{
+    let rid = req.params.rid
+    pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC",[rid],(error,results,filed) =>{
+        if(error){res.json({message: error})}
+        else{
+            res.json(results)
+        }
+    })
+})
+
 
 
 
