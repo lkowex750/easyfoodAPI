@@ -404,23 +404,23 @@ router.post("/cancleAccout", auth.verifyToken, (req, res) => {
 })
 
 //searchUser
-router.get("/searchUser/:data",(req, res) => {
+router.get("/searchUser/:data", (req, res) => {
 
     //jwt.verify(req.token, key, (err, authData) => {
 
-        // if (err) {
-        //     return res.json({
-        //         message: err
-        //     })
-        // }
+    // if (err) {
+    //     return res.json({
+    //         message: err
+    //     })
+    // }
 
-        let data = req.params.data
-        console.log(data)
-        pool.query("SELECT `user_ID`,`name_surname`,`alias_name`,`profile_image` FROM `pj_user` WHERE `name_surname` LIKE concat(?,'%') OR `alias_name` LIKE concat(?,'%') ORDER BY `name_surname`,`alias_name` ASC", [data, data], (error, results, field) => {
-            res.json({
-                data: results
-            })
+    let data = req.params.data
+    console.log(data)
+    pool.query("SELECT `user_ID`,`name_surname`,`alias_name`,`profile_image` FROM `pj_user` WHERE `name_surname` LIKE concat(?,'%') OR `alias_name` LIKE concat(?,'%') ORDER BY `name_surname`,`alias_name` ASC", [data, data], (error, results, field) => {
+        res.json({
+            data: results
         })
+    })
 
 
     //})*
@@ -463,92 +463,240 @@ router.post("/banUser", auth.verifyToken, (req, res) => {
 
 router.get("/profileUser/:uid", (req, res) => {
     //jwt.verify(req.token, key, (err, authData) => {
-        // if (err) {
-        //     return res.json({
-        //         message: err
-        //     })
-        // }
+    // if (err) {
+    //     return res.json({
+    //         message: err
+    //     })
+    // }
 
-        let id = req.params.uid
-        pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.user_status,pj_user.profile_image FROM `pj_user` WHERE user_ID = ?", [id], (error, results, field) => {
-            if (error) {
-                res.json({
-                    message: error
-                })
-            }
-            else {
+    let id = req.params.uid
+    pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.user_status,pj_user.profile_image FROM `pj_user` WHERE user_ID = ?", [id], (error, results, field) => {
+        if (error) {
+            res.json({
+                message: error
+            })
+        }
+        else {
 
-                pool.query("SELECT `rid`,`recipe_name`, `image`, `date`, `price` FROM `pj_recipe` WHERE `user_ID` = ?", [id], (error, result1, field) => {
-                    if (error) {
-                        res.json({
-                            message: error
-                        })
-                    } else {
-                        //console.log(result1.length)
+            pool.query("SELECT `rid`,`recipe_name`, `image`, `date`, `price` FROM `pj_recipe` WHERE `user_ID` = ?", [id], (error, result1, field) => {
+                if (error) {
+                    res.json({
+                        message: error
+                    })
+                } else {
+                    //console.log(result1.length)
 
-                        if (result1.length != 0) {
-                            let countLoop = 0
-                            let score = []
-                            let data = []
-                            let recipe = []
-                            recipe.push(JSON.stringify(result1))
+                    if (result1.length != 0) {
+                        let countLoop = 0
+                        let score = []
+                        let data = []
+                        let recipe = []
+                        recipe.push(JSON.stringify(result1))
 
-                            for (var i = 0; i < result1.length; i++) {
-                                //console.log(result1[i].rid)
+                        for (var i = 0; i < result1.length; i++) {
+                            //console.log(result1[i].rid)
 
-                                pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [result1[i].rid], (error, resultScore, field) => {
-                                    if (error) {
-                                        res.json({
-                                            message: err
-                                        })
-                                    }
-                                    //console.log(resultScore[0].score)
-                                    countLoop += 1
-                                    if (resultScore[0].score != null) {
-                                        score.push(resultScore[0].score)
-                                    } else {
-                                        score.push(0)
-                                    }
-                                    let s = JSON.parse(recipe[0])
-                                    //console.log("asdasd  " + i)
-                                    //console.log(s[countLoop-1].rid)
-                                    //console.log("count "+countLoop+"  res1 "+result1.length)
-                                    //console.log("Score "+score[countLoop-1])
-                                    let newdata = {
-                                        rid: s[countLoop - 1].rid,
-                                        recipe_name: s[countLoop - 1].recipe_name,
-                                        image: s[countLoop - 1].image,
-                                        date: s[countLoop - 1].date,
-                                        price: s[countLoop - 1].price,
-                                        score: score[countLoop - 1]
-                                    }
-                                    data.push(newdata)
-                                    if (countLoop == result1.length) {
-                                        res.json({
-                                            profile: results[0],
-                                            recipePost: data
-                                        })
-                                    }
-                                })
-                            }
-
-                        } else {
-                            res.json({
-                                profile: results[0],
-                                recipePost: []
+                            pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [result1[i].rid], (error, resultScore, field) => {
+                                if (error) {
+                                    res.json({
+                                        message: err
+                                    })
+                                }
+                                //console.log(resultScore[0].score)
+                                countLoop += 1
+                                if (resultScore[0].score != null) {
+                                    score.push(resultScore[0].score)
+                                } else {
+                                    score.push(0)
+                                }
+                                let s = JSON.parse(recipe[0])
+                                //console.log("asdasd  " + i)
+                                //console.log(s[countLoop-1].rid)
+                                //console.log("count "+countLoop+"  res1 "+result1.length)
+                                //console.log("Score "+score[countLoop-1])
+                                let newdata = {
+                                    rid: s[countLoop - 1].rid,
+                                    recipe_name: s[countLoop - 1].recipe_name,
+                                    image: s[countLoop - 1].image,
+                                    date: s[countLoop - 1].date,
+                                    price: s[countLoop - 1].price,
+                                    score: score[countLoop - 1]
+                                }
+                                data.push(newdata)
+                                if (countLoop == result1.length) {
+                                    res.json({
+                                        profile: results[0],
+                                        recipePost: data
+                                    })
+                                }
                             })
                         }
 
+                    } else {
+                        res.json({
+                            profile: results[0],
+                            recipePost: []
+                        })
                     }
 
+                }
 
-                })
-            }
 
-        })
+            })
+        }
+
+    })
 
     //})*
 })
+
+
+router.post("/topup", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, async (err, authData) => {
+        try {
+            if (err) { res.json({ message: err }) }
+            let uid = authData.user
+            let status = await omiseTopup()
+            if (status.status == "successful") {
+                res.json(status)
+
+
+            } else {
+                res.json({ message: "err" })
+            }
+        } catch (error) {
+            console.log(error)
+        }
+
+    })
+})
+
+async function omiseTopup() {
+    /*
+    call omise API
+    create Source 
+    create Charge 
+    */
+    let status = await {
+        status: "successful",
+        urlQrcode: "http://apifood.comsciproject.com/uploadPost/qr.PNG"
+    } //return omise
+    return status
+}
+
+async function omiseWithdraw(req) {
+    /*
+    call omise API
+    create Source 
+    create Charge 
+    */
+    let body = req
+    let status = await {
+        status: "successful",
+        bank: body
+    } //return omise
+    return status
+}
+
+
+
+router.post("/updateMoney", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
+        let uid = authData.user
+        let body = req.body
+        pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)", [uid, body.state, body.money], (error, result, field) => {
+            if (error) { res.json({ message: error }) }
+            else {
+                if (result.affectedRows == 1) {
+                    pool.query("SELECT balance FROM `pj_user` WHERE `user_ID` = ?", [uid], (error, resultfirst, field) => {
+                        if (error) { res.json({ message: error }) }
+                        else {
+                            try {
+                                let totalMoney = 0
+                                if (body.state == "topup" || body.state == "sell") {
+                                    totalMoney = resultfirst[0].balance + body.money
+                                } else if (body.state == "withdraw" || body.state == "buy") {
+                                    totalMoney = resultfirst[0].balance - body.money
+                                }
+
+                                pool.query("UPDATE `pj_user` SET balance = ? WHERE `user_ID` = ?", [totalMoney, uid], (error, resultTop, filed) => {
+                                    if (error) { res.json({ message: error }) }
+                                    else {
+                                        pool.query("SELECT balance FROM `pj_user` WHERE `user_ID` = ?", [uid], (error, resultfi, field) => {
+                                            if (error) { res.json({ message: error }) }
+                                            else {
+                                                res.json({
+                                                    balance: resultfi[0].balance
+                                                })
+                                            }
+                                        })
+                                    }
+                                })
+
+                            } catch (error) {
+                                res.json({message: "catch : "+error})
+                            }
+                        }
+                    })
+
+                } else {
+                    res.json({
+                        message: "something insert error!"
+                    })
+                }
+            }
+        })
+    })
+})
+
+router.post("/withdraw", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
+
+        let uid = authData.user
+        let body = req.body
+        //check transaction
+        pool.query("SELECT * FROM `pj_transaction` WHERE `user_ID` = ?", [uid], (error, resultT, field) => {
+            if (error) { res.json({ message: err }) }
+            else {
+                console.log(resultT.length)
+                let countLoop = 0
+                let moneyTrans = 0
+                resultT.forEach(element => {
+                    if (element.state == "topup") {
+                        moneyTrans += element.money
+                    } else if (element.state == "withdraw") {
+                        moneyTrans -= element.money
+                    } else if (element.state == "buy") {
+                        moneyTrans -= element.money
+                    } else if (element.state == "sell") {
+                        moneyTrans += element.money
+                    }
+
+                    countLoop++
+                    if (countLoop == resultT.length) {
+                        pool.query("SELECT balance FROM `pj_user` WHERE `user_ID` = ?", [uid], async (error, resultBal, field) => {
+                            if (error) { res.json({ message: error }) }
+                            else {
+                                if (resultBal[0].balance == moneyTrans) {
+                                    //
+                                    let status = await omiseWithdraw(body)
+                                    res.json(status)
+                                } else {
+                                    res.json({ message: "failed" })
+                                }
+                            }
+                        })
+                    }
+                });
+            }
+        })
+    })
+})
+
+
+
 
 
 
