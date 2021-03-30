@@ -13,7 +13,8 @@ let pathHttp = "https://apifood.comsciproject.com" + '/'
 router.get("/checkFollower/:uid", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         if (err) { res.json({ message: err }) }
-
+        let myid = authData.user
+        let checkfollower = 0
         let uid = req.params.uid
         pool.query("select count(follow_ID) as countFollower from pj_follow where following_ID = ?", [uid], (error, result, field) => {
             if (error) { res.json({ message: error }) }
@@ -28,13 +29,20 @@ router.get("/checkFollower/:uid", auth.verifyToken, (req, res) => {
                             resultID.forEach(element => {
                                 pool.query("SELECT pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_user.user_status FROM pj_user WHERE pj_user.user_ID = ?", [element.my_ID], (error, resultProfile, field) => {
                                     if (error) { res.json({ message: error }) }
+                                
                                     else {
                                         data.push(resultProfile[0])
+                                        
+                                        if(resultProfile[0].user_ID == myid){
+                                            checkfollower = 1
+                                        }
                                         countLoop += 1
                                     }
+
                                     if (countLoop == resultID.length) {
                                         res.json({
                                             count: result[0].countFollower,
+                                            checkFollower: checkfollower,
                                             user: data
                                         })
                                     }
@@ -43,6 +51,7 @@ router.get("/checkFollower/:uid", auth.verifyToken, (req, res) => {
                         } else {
                             res.json({
                                 count: result[0].countFollower,
+                                checkFollower: checkfollower,
                                 user: []
                             })
                         }
@@ -60,7 +69,7 @@ router.get("/checkFollower/:uid", auth.verifyToken, (req, res) => {
 router.get("/checkFollowing/:uid", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         if (err) { res.json({ message: err }) }
-
+        
         let uid = req.params.uid
         pool.query("select count(follow_ID) as countFollowing from pj_follow where my_ID = ?", [uid], (error, result, field) => {
             if (error) { res.json({ message: error }) }
@@ -73,6 +82,7 @@ router.get("/checkFollowing/:uid", auth.verifyToken, (req, res) => {
                         var countLoop = 0
                         if (resultID.length != 0) {
                             resultID.forEach(element => {
+
                                 pool.query("SELECT pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_user.user_status FROM pj_user WHERE pj_user.user_ID = ?", [element.following_ID], (error, resultProfile, field) => {
                                     if (error) { res.json({ message: error }) }
                                     else {
