@@ -279,68 +279,85 @@ router.get("/mypost/:id", (req, res) => {
     pool.query("SELECT * FROM `pj_user` where user_ID = ?", [id], (error, result, field) => {
         if (error) { res.json({ message: error }) }
         else {
-           pool.query("select count(follow_ID) as countFollower from pj_follow where following_ID = ?",[id],(error,resultCountFwer,field) =>{
+            pool.query("select count(follow_ID) as countFollower from pj_follow where following_ID = ?", [id], (error, resultCountFwer, field) => {
                 if (error) { res.json({ message: error }) }
-                else{
-                    pool.query("select count(follow_ID) as countFollowing from pj_follow where my_ID = ?",[id],(error,resultCountFwing,field) =>{
+                else {
+                    pool.query("select count(follow_ID) as countFollowing from pj_follow where my_ID = ?", [id], (error, resultCountFwing, field) => {
                         if (error) { res.json({ message: error }) }
-                        else{
-                            pool.query("SELECT rid, recipe_name, image, date, price FROM pj_recipe  WHERE pj_recipe.user_ID = ? ORDER BY date DESC",[id],(error,resultRecipe,field) =>{
+                        else {
+                            pool.query("SELECT rid, recipe_name, image, date, price FROM pj_recipe  WHERE pj_recipe.user_ID = ? ORDER BY date DESC", [id], (error, resultRecipe, field) => {
                                 if (error) { res.json({ message: error }) }
-                                else{
-                                    
+                                else {
+
                                     let countLoop = 0
                                     let resultRecipeNew = []
                                     let dataScore = []
-                                    resultRecipe.forEach(element => {
-                                        pool.query("SELECT AVG(pj_score.score) as score FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resultAvg,field) =>{
-                                            if (error) { res.json({ message: error }) }
-                                            else{
-                                                if(resultAvg[0].score != null){
-                                                    dataScore.push(resultAvg[0].score)
-                                                }else{
-                                                    dataScore.push(0)
-                                                }
-                                                resultRecipeNew.push({
-                                                    rid: resultRecipe[countLoop].rid, 
-                                                    recipe_name: resultRecipe[countLoop].recipe_name, 
-                                                    image : resultRecipe[countLoop].image, 
-                                                    date : resultRecipe[countLoop].date, 
-                                                    price: resultRecipe[countLoop].price,
-                                                    score: dataScore[countLoop]
-                                                })
-
-                                                countLoop++
-                                                if(countLoop == resultRecipe.length){
-                                                    let newData = {
-                                                        user_ID: result[0].user_ID,
-                                                        name_surname: result[0].name_surname,
-                                                        alias_name: result[0].alias_name,
-                                                        user_status: result[0].user_status,
-                                                        profile_image: result[0].profile_image,
-                                                        countPost: resultRecipeNew.length,
-                                                        countFollower: resultCountFwer[0].countFollower,
-                                                        countFollowing: resultCountFwing[0].countFollowing,
-                                                        recipePost: resultRecipeNew
-                                                    }
-                                        
-                                                    return res.json(newData)
-                                                }
-                                            }
-                                        })
-                                    });
                                     
+                                    if (resultRecipe.length != 0) {
+                                        resultRecipe.forEach(element => {
+                                            pool.query("SELECT AVG(pj_score.score) as score FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAvg, field) => {
+                                                if (error) { res.json({ message: error }) }
+                                                else {
+                                                    if (resultAvg[0].score != null) {
+                                                        dataScore.push(resultAvg[0].score)
+                                                    } else {
+                                                        dataScore.push(0)
+                                                    }
+                                                    resultRecipeNew.push({
+                                                        rid: resultRecipe[countLoop].rid,
+                                                        recipe_name: resultRecipe[countLoop].recipe_name,
+                                                        image: resultRecipe[countLoop].image,
+                                                        date: resultRecipe[countLoop].date,
+                                                        price: resultRecipe[countLoop].price,
+                                                        score: dataScore[countLoop]
+                                                    })
+
+                                                    countLoop++
+                                                    if (countLoop == resultRecipe.length) {
+                                                        let newData = {
+                                                            user_ID: result[0].user_ID,
+                                                            name_surname: result[0].name_surname,
+                                                            alias_name: result[0].alias_name,
+                                                            user_status: result[0].user_status,
+                                                            profile_image: result[0].profile_image,
+                                                            countPost: resultRecipeNew.length,
+                                                            countFollower: resultCountFwer[0].countFollower,
+                                                            countFollowing: resultCountFwing[0].countFollowing,
+                                                            recipePost: resultRecipeNew
+                                                        }
+
+                                                        return res.json(newData)
+                                                    }
+                                                }
+                                            })
+                                        });
+
+                                    }else{
+                                        let newData = {
+                                            user_ID: result[0].user_ID,
+                                            name_surname: result[0].name_surname,
+                                            alias_name: result[0].alias_name,
+                                            user_status: result[0].user_status,
+                                            profile_image: result[0].profile_image,
+                                            countPost: resultRecipeNew.length,
+                                            countFollower: resultCountFwer[0].countFollower,
+                                            countFollowing: resultCountFwing[0].countFollowing,
+                                            recipePost: resultRecipeNew
+                                        }
+                                        return res.json(newData)
+                                    }
+
                                 }
                             })
-                            
+
                         }
                     })
                 }
-                
-           })
+
+            })
 
 
-           
+
         }
         //console.log(result[0])
 

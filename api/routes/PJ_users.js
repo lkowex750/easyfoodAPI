@@ -635,7 +635,7 @@ router.post("/updateMoney", auth.verifyToken, (req, res) => {
                                 })
 
                             } catch (error) {
-                                res.json({message: "catch : "+error})
+                                res.json({ message: "catch : " + error })
                             }
                         }
                     })
@@ -660,36 +660,40 @@ router.post("/withdraw", auth.verifyToken, (req, res) => {
         pool.query("SELECT * FROM `pj_transaction` WHERE `user_ID` = ?", [uid], (error, resultT, field) => {
             if (error) { res.json({ message: err }) }
             else {
-                console.log(resultT.length)
+                //console.log(resultT.length)
                 let countLoop = 0
                 let moneyTrans = 0
-                resultT.forEach(element => {
-                    if (element.state == "topup") {
-                        moneyTrans += element.money
-                    } else if (element.state == "withdraw") {
-                        moneyTrans -= element.money
-                    } else if (element.state == "buy") {
-                        moneyTrans -= element.money
-                    } else if (element.state == "sell") {
-                        moneyTrans += element.money
-                    }
+                if (resultT.length != 0) {
+                    resultT.forEach(element => {
+                        if (element.state == "topup") {
+                            moneyTrans += element.money
+                        } else if (element.state == "withdraw") {
+                            moneyTrans -= element.money
+                        } else if (element.state == "buy") {
+                            moneyTrans -= element.money
+                        } else if (element.state == "sell") {
+                            moneyTrans += element.money
+                        }
 
-                    countLoop++
-                    if (countLoop == resultT.length) {
-                        pool.query("SELECT balance FROM `pj_user` WHERE `user_ID` = ?", [uid], async (error, resultBal, field) => {
-                            if (error) { res.json({ message: error }) }
-                            else {
-                                if (resultBal[0].balance == moneyTrans) {
-                                    //
-                                    let status = await omiseWithdraw(body)
-                                    res.json(status)
-                                } else {
-                                    res.json({ message: "failed" })
+                        countLoop++
+                        if (countLoop == resultT.length) {
+                            pool.query("SELECT balance FROM `pj_user` WHERE `user_ID` = ?", [uid], async (error, resultBal, field) => {
+                                if (error) { res.json({ message: error }) }
+                                else {
+                                    if (resultBal[0].balance == moneyTrans) {
+                                        //
+                                        let status = await omiseWithdraw(body)
+                                        res.json(status)
+                                    } else {
+                                        res.json({ message: "failed" })
+                                    }
                                 }
-                            }
-                        })
-                    }
-                });
+                            })
+                        }
+                    });
+                }else{
+                    res.json({  status: "failed",message: "you don't have transaction!" })
+                }
             }
         })
     })
