@@ -793,6 +793,56 @@ router.get("/getComment/:rid", (req, res) => {
     })
 })
 
+router.get("/searchWithCategory/:name", (req, res) => {
+    let name = req.params.name
+    pool.query("SELECT pj_recipe.rid,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_recipe.recipe_name,pj_recipe.food_category,pj_recipe.image,pj_recipe.price from pj_recipe,pj_user where pj_user.user_ID = pj_recipe.user_ID and food_category = ?", [name], (error, results, filed) => {
+        if (error) { res.json({ message: error }) }
+        else {
+            let dataScore = []
+            let countLoop = 0
+            let dataRecipe = []
+            results.forEach(element =>{
+                pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error ,score1,filed) =>{
+                    if (error) { res.json({ message: error }) }
+                    else{
+                        if(score1[0].score != null){
+                            dataScore.push(score1[0].score)
+                        }else{         
+                            dataScore.push(0)
+                        }
+     
+                        dataRecipe.push({
+                            rid: results[countLoop].rid,
+                            user_ID: results[countLoop].user_ID,
+                            name_surname: results[countLoop].name_surname,
+                            alias_name: results[countLoop].alias_name,
+                            profile_image: results[countLoop].profile_image,
+                            recipe_name: results[countLoop].recipe_name,
+                            food_category: results[countLoop].food_category,
+                            image: results[countLoop].image,
+                            price: results[countLoop].price,
+                            score: dataScore[countLoop]
+                        })
+                        countLoop++
+                        if(countLoop == results.length){
+                            
+        
+                            res.json(dataRecipe)
+                        }
+                        
+                        
+                    }
+                })
+                
+            })
+            
+            
+            
+        }
+    })
+})
+
+
 
 
 
