@@ -129,7 +129,7 @@ router.post("/createPost", uploadRecipe.single("image"), (req, res) => {
 
         let uid = authData.user
         //console.log(parseFloat(body.price))
-        pool.query("INSERT INTO `pj_recipe` (`user_ID`, `recipe_name`, `image`, `date`,`price`) VALUES (?, ?, ?, now(),?)", [uid, body.recipe_name, path, body.price], (error, results, field) => {
+        pool.query("INSERT INTO `pj_recipe` (`user_ID`, `recipe_name`, `image`, `date`,`suitable_for`, `take_time`, `food_category`, `description`,`price`) VALUES (?, ?, ?, now(),?,?,?,?,?)", [uid, body.recipe_name, path, body.suitable_for,body.take_time,body.food_category,body.description,body.price], (error, results, field) => {
             if (error) {
                 res.json({
                     message: error
@@ -578,7 +578,7 @@ router.get("/getPost/:rid", (req, res) => {
     //let uid = authData.user
     let rid = req.params.rid
 
-    pool.query("SELECT `rid`, `user_ID`, `recipe_name`, `image`, `date`, `price` FROM `pj_recipe` WHERE `rid` = ? ", [rid], (error, resultRecipe, field) => {
+    pool.query("SELECT `rid`, `user_ID`, `recipe_name`, `image`, `date`, `price`,`suitable_for`, `take_time`, `food_category`, `description` FROM `pj_recipe` WHERE `rid` = ? ", [rid], (error, resultRecipe, field) => {
         if (error) { res.json({ message: error }) }
         else {
             pool.query("SELECT `ingredients_ID`, `ingredientName`, `amount`, `step` FROM `pj_ingredients` WHERE rid = ?", [rid], (error, resultIngred, field) => {
@@ -599,6 +599,10 @@ router.get("/getPost/:rid", (req, res) => {
                                                 recipe_name: resultRecipe[0].recipe_name,
                                                 image: resultRecipe[0].image,
                                                 date: resultRecipe[0].date,
+                                                suitable_for: resultRecipe[0].suitable_for,
+                                                take_time: resultRecipe[0].take_time,
+                                                food_category: resultRecipe[0].food_category,
+                                                description: resultRecipe[0].description,
                                                 price: resultRecipe[0].price,
                                                 ingredient: resultIngred,
                                                 howto: resultHowto,
