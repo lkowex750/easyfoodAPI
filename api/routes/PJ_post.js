@@ -578,7 +578,7 @@ router.get("/getPost/:rid", (req, res) => {
     //let uid = authData.user
     let rid = req.params.rid
 
-    pool.query("SELECT `rid`, `user_ID`, `recipe_name`, `image`, `date`, `price`,`suitable_for`, `take_time`, `food_category`, `description` FROM `pj_recipe` WHERE `rid` = ? ", [rid], (error, resultRecipe, field) => {
+    pool.query("SELECT pj_recipe.rid,pj_recipe.user_ID,pj_recipe.recipe_name,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_recipe.image, pj_recipe.date, pj_recipe.price,pj_recipe.suitable_for, pj_recipe.take_time, pj_recipe.food_category, pj_recipe.description FROM `pj_recipe`,`pj_user` WHERE pj_user.user_ID = pj_recipe.user_ID and `rid` = ?", [rid], (error, resultRecipe, field) => {
         if (error) { res.json({ message: error }) }
         else {
             pool.query("SELECT `ingredients_ID`, `ingredientName`, `amount`, `step` FROM `pj_ingredients` WHERE rid = ?", [rid], (error, resultIngred, field) => {
@@ -596,6 +596,9 @@ router.get("/getPost/:rid", (req, res) => {
                                             let newData = {
                                                 rid: resultRecipe[0].rid,
                                                 user_ID: resultRecipe[0].user_ID,
+                                                name_surname : resultRecipe[0].name_surname,
+                                                alias_name: resultRecipe[0].alias_name,
+                                                profile_image: resultRecipe[0].profile_image,
                                                 recipe_name: resultRecipe[0].recipe_name,
                                                 image: resultRecipe[0].image,
                                                 date: resultRecipe[0].date,
@@ -795,10 +798,14 @@ router.get("/getComment/:rid", (req, res) => {
 
 router.get("/searchWithCategory/:name", (req, res) => {
     let name = req.params.name
-    pool.query("SELECT pj_recipe.rid,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_recipe.recipe_name,pj_recipe.food_category,pj_recipe.image,pj_recipe.price from pj_recipe,pj_user where pj_user.user_ID = pj_recipe.user_ID and food_category = ?", [name], (error, results, filed) => {
+    pool.query("SELECT pj_recipe.rid,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_recipe.recipe_name,pj_recipe.food_category,pj_recipe.description,pj_recipe.image,pj_recipe.price from pj_recipe,pj_user where pj_user.user_ID = pj_recipe.user_ID and food_category = ?", [name], (error, results, filed) => {
         if (error) { res.json({ message: error }) }
         else {
-            let dataScore = []
+            //console.log(results)
+            if(results == "" || results == null){
+                res.json({message:"ไม่พบหมวดหมู่ "+name+ " ในการค้นหานี้ "})
+            }else{
+                let dataScore = []
             let countLoop = 0
             let dataRecipe = []
             results.forEach(element =>{
@@ -819,6 +826,7 @@ router.get("/searchWithCategory/:name", (req, res) => {
                             profile_image: results[countLoop].profile_image,
                             recipe_name: results[countLoop].recipe_name,
                             food_category: results[countLoop].food_category,
+                            description: results[countLoop].description,
                             image: results[countLoop].image,
                             price: results[countLoop].price,
                             score: dataScore[countLoop]
@@ -835,6 +843,8 @@ router.get("/searchWithCategory/:name", (req, res) => {
                 })
                 
             })
+            }
+            
             
             
             
@@ -842,6 +852,97 @@ router.get("/searchWithCategory/:name", (req, res) => {
     })
 })
 
+router.post("/buy",auth.verifyToken, (req,res) =>{
+    jwt.verify(req.token, key, (err, authData) =>{
+        if (err) { res.json({ success: 0,message: err }) }
+
+        let rid = req.body.rid
+        let uid = authData.user
+
+        //query price of recipe
+        pool.query("select user_ID,price from pj_recipe where rid = ? ",[rid],(error,resultR,field) =>{
+            if(error) {res.json({success: 0,message: error})}
+            else{
+                //query balance of user by id
+                if(resultR[0].price > 0){
+                    pool.query("select balance from pj_user where user_ID = ?",[uid],(error,balance,field) =>{
+                        if(error) {res.json({success: 0,message: error})}
+                        else{
+                            if(balance[0].balance >= resultR[0].price){
+                                //partner balance
+                                let myBalance = balance[0].balance - resultR[0].price
+                                let partnerBalance = resultR[0].price
+                                let partnerID = resultR[0].user_ID
+
+                                //query balance of partner for update
+                                pool.query("select balance from pj_user where user_ID = ?",[partnerID],(error2,balanceP,field) =>{
+                                    partnerBalance = balanceP[0].balance + partnerBalance
+
+                                    //update all data
+                                    //this update myBalance
+                                    pool.query("update pj_user set balance = ? where user_ID = ?",[myBalance,uid])
+                                    //this update partnerBalance
+                                    pool.query("update pj_user set balance = ? where user_ID = ?",[partnerBalance,partnerID])
+                                    let state = ""
+                                    //insert data in buy table
+                                    pool.query("INSERT INTO `pj_buy` (`recipe_ID`, `user_ID`, `datetime`, `price`) VALUES (?, ?, now(), ?)",[rid,uid,resultR[0].price],(error,resultBuy,field) =>{
+                                        if(error){res.json({success: 0,message: error})}
+                                        else{ 
+                                            if(resultBuy.affectedRows == 1){
+                                                //insert transection of my by id
+                                                state = "buy_recipe"
+                                                pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)",[uid,state,resultR[0].price])
+                                                
+                                                //insert data in sell table
+                                                pool.query("INSERT INTO `pj_sell` (`user_ID`,`partner_ID`, `recipe_ID`, `datetime`, `price`) VALUES (?, ?,?, now(), ?)",[partnerID,uid,rid,resultR[0].price],(error,resultSell,field) =>{
+                                                    if(error){res.json({message: error})}
+                                                    if(resultSell.affectedRows == 1){
+                                                        //insert transection of partner by id
+                                                        state = "sell_recipe"
+                                                        pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)",[partnerID,state,resultR[0].price])
+                                                        res.json({success: 1,message: "ดำเนินการสำเร็จ"})
+                                                    }
+                                                })
+                                            }
+                                        }
+                                    })
+                                    
+                                })
+                                
+                            }else{
+                                res.json({success: 0,message: "เงินคุณไม่พอสำหรับซื้อสูตรอาหาร"})
+                            }
+                        }
+                    })
+                }
+            }
+            
+        })
+
+    })
+})
+
+router.get("/mybuy",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        let uid = authData.user
+
+        pool.query("select pj_buy.bid,pj_buy.recipe_ID,pj_buy.datetime,pj_buy.price,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.food_category,pj_recipe.description from pj_buy,pj_recipe where pj_recipe.rid = pj_buy.recipe_ID and pj_buy.user_ID = ?",[uid],(error,result,field) =>{
+            res.json(result)
+        })
+    })
+})
+
+router.get("/mysell",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        let uid = authData.user
+
+        pool.query("select pj_sell.sid,pj_sell.datetime,pj_recipe.recipe_name,pj_user.name_surname,pj_sell.price from pj_user,pj_recipe,pj_sell where pj_user.user_ID = pj_recipe.user_ID and pj_recipe.rid = pj_sell.recipe_ID and pj_sell.user_ID = ?",[uid],(error,result,field) =>{
+            res.json(result)
+        })
+    })
+})
 
 
 

@@ -614,9 +614,9 @@ router.post("/updateMoney", auth.verifyToken, (req, res) => {
                         else {
                             try {
                                 let totalMoney = 0
-                                if (body.state == "topup" || body.state == "sell") {
+                                if (body.state == "topup" || body.state == "sell_recipe") {
                                     totalMoney = resultfirst[0].balance + body.money
-                                } else if (body.state == "withdraw" || body.state == "buy") {
+                                } else if (body.state == "withdraw" || body.state == "buy_recipe") {
                                     totalMoney = resultfirst[0].balance - body.money
                                 }
 
