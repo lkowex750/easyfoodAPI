@@ -699,6 +699,66 @@ router.post("/withdraw", auth.verifyToken, (req, res) => {
     })
 })
 
+router.get("/recommendUser",(req,res) =>{
+    //select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image ,COUNT(*) as amount FROM pj_follow,pj_user GROUP BY pj_follow.following_ID ORDER BY amount DESC LIMIT 5
+//select pj_follow.following_ID ,COUNT(*) as amount FROM pj_follow GROUP BY pj_follow.following_ID ORDER BY amont DESC LIMIT 5
+    pool.query("select pj_follow.following_ID ,COUNT(*) as amount FROM pj_follow GROUP BY pj_follow.following_ID ORDER BY amount DESC LIMIT 5",(error,result,field) =>{
+        let data = new Array()
+        result.forEach(element =>{
+            data.push(element.following_ID)
+        })
+        let newData = []
+        let countLoop = 0
+
+        //มีสองแบบ แบบแรกจะเหมือนฟิกเอาคนที่มีผู้ติดตามเยอะมาโชว์ แบบสองจะเป็นสุ่ม
+        if(data.length == 5){  
+            data.forEach(element =>{
+                pool.query("select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image from pj_user where pj_user.user_ID = ?",[element],(error,resultData,field) =>{
+                    newData[countLoop] = {
+                        user_ID: resultData[0].user_ID,
+                        name_surname: resultData[0].name_surname,
+                        alias_name: resultData[0].alias_name,
+                        profile_image: resultData[0].profile_image,
+                        amountFollower: result[countLoop].amount
+                    } 
+                    countLoop++
+
+                    if(countLoop == data.length){
+                        res.json(newData)
+                    }
+                })
+            })
+        }else{
+            pool.query("select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image from pj_user ORDER BY RAND() LIMIT 5",(error,resultData,field) =>{
+                data = new Array()
+                resultData.forEach(element =>{
+                    data.push(element.user_ID)
+                })
+
+                data.forEach(element=>{
+                    pool.query("select count(follow_ID) as amountFollower from pj_follow where following_ID = ?",[element],(error,resultFol,filed) =>{
+                        newData[countLoop] = {
+                            user_ID: resultData[countLoop].user_ID,
+                            name_surname: resultData[countLoop].name_surname,
+                            alias_name: resultData[countLoop].alias_name,
+                            profile_image: resultData[countLoop].profile_image,
+                            amountFollower: resultFol[0].amountFollower
+                        } 
+                        countLoop++
+    
+                        if(countLoop == data.length){
+                            newData.sort(function(a,b){
+                                return b.amountFollower - a.amountFollower
+                            })
+                            res.json(newData)
+                        }
+                    })
+                })
+            })
+        }
+    })
+})
+
 
 
 
