@@ -982,21 +982,35 @@ router.get("/mysell",auth.verifyToken,(req,res) =>{
     })
 })
 
-/*
-const sl = require('../../test1/select')
+
+/*const sl = require('../../test1/select')
+
 
 router.get("/test1",  (req,res) =>{
-    let uid = 1
-    let sql = "select * from pj_user where user_ID =?"
-    sql = mysql.format(sql,[uid])
-    sl.Query(sql,function(result){
-        res.json(result[0].email)
-    })
-    console.log(sl)
-    
-})
+    const request = new Request('https://api.netpie.io/v2/device/status', {method: 'get', headers: 'content-type: application/json,Authorization: Device 6bda2e6a-9ae5-4b03-92a3-9c98a4b46d14:AQpFvDKqeHjnKaHcy3Yyb8gpdZYs2y29'});
 
-*/
+    const url = request.url;
+    const method = request.method;
+    const credentials = request.credentials;
+    const bodyUsed = request.bodyUsed;
+
+     fetch(request)
+  .then(response => {
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      throw new Error('Something went wrong on api server!');
+    }
+  })
+  .then(response => {
+    console.debug(response);
+    // ...
+  }).catch(error => {
+    console.error(error);
+  });   
+})*/
+
+
 
 router.post("/deleteRecipe",auth.verifyToken,(req,res) =>{
     jwt.verify(req.token,key,(err,authData) =>{
