@@ -11,6 +11,7 @@ const path = require('path')
 const userRoutePJ = require('./api/routes/PJ_users')
 const postRoutePJ = require('./api/routes/PJ_post')
 const followRoutePJ = require('./api/routes/PJ_follow')
+const notiRoutePJ = require('./api/routes/PJ_noti')
 
 
 // app.use(bodyParser.json())
@@ -50,5 +51,6 @@ app.use('/follow',followRoute)
 app.use('/pjUsers',userRoutePJ)
 app.use('/pjPost',postRoutePJ)
 app.use('/pjFollow',followRoutePJ)
+app.use('/pjNoti',notiRoutePJ)
 
 module.exports = app

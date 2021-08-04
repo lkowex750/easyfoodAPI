@@ -749,6 +749,11 @@ router.get("/searchRecipeName/:name", (req, res) => {
         let countLoop = 0
         let data = []
         let newData = []
+        if(result.length == 0){
+            res.json({
+                data: []
+            })
+        }
         result.forEach(element => {
             pool.query("SELECT AVG(`score`) as AVGscore FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resutlsScore, field) => {
 

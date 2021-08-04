@@ -299,7 +299,7 @@ router.post('/loginFacebook', (req, res) => {
 //return path
 
 router.post("/uploadProfile", upload.single("profile_image"), (req, res) => {
-    let path = "http://localhost:3000" + '/' + req.file.path
+    let path = pathHttp+ req.file.path
     let body = req.body
 
     jwt.verify(body.token, key, (error, authData) => {
