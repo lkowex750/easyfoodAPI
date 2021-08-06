@@ -208,13 +208,20 @@ router.post("/signin", (req, res) => {
             })
         }
         pool.query("SELECT  * FROM `pj_user` WHERE `email` = ? and `password` = ?", [body.email, results[0].password], (err, results, field) => {
-
-            jwt.sign({ user: results[0].user_ID }, key, (err, token) => {
-                return res.json({
-                    success: 1,
-                    token
+            if(results[0].access_status != 0){
+                jwt.sign({ user: results[0].user_ID }, key, (err, token) => {
+                    return res.json({
+                        success: 1,
+                        token
+                    })
                 })
-            })
+            }else{
+                res.json({
+                    success: 0,
+                    token: "ผู้ใช้ถูก แบน!!"
+                })
+            }
+            
 
 
         })

@@ -744,7 +744,7 @@ router.get("/searchRecipeName/:name", (req, res) => {
     // else{
     //let uid = authData.user
     let name = req.params.name
-    pool.query("SELECT  pj_recipe.rid,  pj_recipe.recipe_name, pj_recipe.image ,pj_user.user_ID, pj_user.alias_name,pj_user.name_surname,pj_user.profile_image FROM `pj_recipe`, pj_user WHERE pj_user.user_ID = pj_recipe.user_ID AND  pj_recipe.recipe_name LIKE concat(?,'%') order by recipe_name", [name], (error, result, field) => {
+    pool.query("SELECT  pj_recipe.rid,  pj_recipe.recipe_name, pj_recipe.image ,pj_user.user_ID, pj_user.alias_name,pj_user.name_surname,pj_user.profile_image,pj_recipe.price FROM `pj_recipe`, pj_user WHERE pj_user.user_ID = pj_recipe.user_ID AND  pj_recipe.recipe_name LIKE concat(?,'%') order by recipe_name", [name], (error, result, field) => {
         //console.log(result[0].rid)
         let countLoop = 0
         let data = []
@@ -774,7 +774,8 @@ router.get("/searchRecipeName/:name", (req, res) => {
                         alias_name: result[countLoop].alias_name,
                         name_surname: result[countLoop].name_surname,
                         profile_image: result[countLoop].profile_image,
-                        score: data[countLoop]
+                        score: data[countLoop],
+                        price: result[countLoop].price
                     })
                     //console.log(data)
                     countLoop += 1
@@ -1097,6 +1098,23 @@ router.get("/recommendRecipe",(req,res) =>{
             })
         })
         //res.json(arr_rid)
+    })
+})
+
+router.get("/getMyScore/:rid",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message:err})}
+
+        let uid = authData.user
+        let rid = req.params.rid
+
+        pool.query("select score from pj_score where user_ID = ? and recipe_ID = ?",[uid,rid],(error,result,field) =>{
+            if(result[0].score == "" || result[0].score == null){
+                res.json({score: 0})
+            }else{
+                res.json({score: result[0].score})
+            }
+        })
     })
 })
 
