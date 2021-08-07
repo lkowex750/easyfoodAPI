@@ -1109,7 +1109,8 @@ router.get("/getMyScore/:rid",auth.verifyToken,(req,res) =>{
         let rid = req.params.rid
 
         pool.query("select score from pj_score where user_ID = ? and recipe_ID = ?",[uid,rid],(error,result,field) =>{
-            if(result[0].score == "" || result[0].score == null){
+            
+            if(result == "" || result == null){
                 res.json({score: 0})
             }else{
                 res.json({score: result[0].score})
