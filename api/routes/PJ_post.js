@@ -1119,6 +1119,26 @@ router.get("/getMyScore/:rid",auth.verifyToken,(req,res) =>{
     })
 })
 
+router.post("/deleteComment",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        if(err){res.json({message: err})}
+        
+        let uid = authData.user
+        let cid = req.body.cid
+        pool.query("delete from pj_comment where user_ID = ? and cid = ?",[uid,cid],(error,results,field) =>{
+            if (results.affectedRows == 1) {
+                return res.json({
+                    success: 1
+                })
+            } else {
+                return res.json({
+                    success: 0
+                })
+            }
+        })
+    })
+})
+
 
 
 
