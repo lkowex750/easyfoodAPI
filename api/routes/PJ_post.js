@@ -1032,6 +1032,7 @@ router.post("/deleteRecipe",auth.verifyToken,(req,res) =>{
                         res.json({success: 0,message: "ไม่สามารถลบสูตรอาหารได้ เนื่องจากสูตรนี้ได้ทำการซื้อขายแล้ว"})
                     }else{
                         //to do delete
+                        pool.query("delete from pj_notification where recipe_ID = ?",[rid])
                         pool.query("delete from pj_comment where recipe_ID = ?",[rid])
                         pool.query("delete from pj_howto where rid = ?",[rid])
                         pool.query("delete from pj_score where recipe_ID = ?",[rid])
