@@ -26,21 +26,28 @@ router.post('/api_notification', (req, res) => {
     let token = req.body.token_noti
     let title = req.body.title
     let body = req.body.body
-
-
+    //icon: "https://apifood.comsciproject.com/uploadProfilePj\\2021-08-07T175534781Z-889693.png"
+    let ace = "https://apifood.comsciproject.com/uploadProfilePj\\2021-08-08T054800988Z-aceee.png"
+    let food = "https://apifood.comsciproject.com/uploadProfilePj\\2021-08-07T175534781Z-889693.png"
     const registrationToken = token;
 
     const message = {
+        
         notification: {
             body: body,
             title: title,
-            icon: "https://apifood.comsciproject.com/uploadProfilePj\\2021-08-07T175534781Z-889693.png"
+            image: ace
+            
         },
-        // data: {
-        //     body: body,
-        //     title: title,
-        // },
+        android: {
+            priority: "high",
+            notification: {
+                click_action: "OPEN_ACTIVITY_1"
+            }
+          },
+        
         token: registrationToken
+       
 
     };
 
@@ -54,11 +61,11 @@ router.post('/api_notification', (req, res) => {
             console.log('Successfully sent message:', response);
             res.json({
                 success: 1,
-                message: "Successfully"
+                message: "Successfully_1"
             })
         })
         .catch((error) => {
-            console.log('Error sending message:', error);
+            console.log('1Error sending message:', error);
             res.json({
                 success: 0,
                 message: error
