@@ -22,7 +22,7 @@ const storageHowto = multer.diskStorage({
     }
 })
 
-const storageIngred = multer.diskStorage({
+const storageReport = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploadIngredients_file/')
     },
@@ -59,8 +59,8 @@ const uploadHowto = multer({
 
 //เรียก uploadของ 
 
-const uploadIngred = multer({
-    storage: storageRecipe
+const uploadReport = multer({
+    storage: storageReport
 })
 
 const uploadRecipe = multer({
@@ -83,32 +83,15 @@ router.post("/uploadHowtoFile", uploadHowto.single("file"), (req, res) => {
 })
 
 
-//เพิ่มข้อมูลวัตถุดิบเข้าระบบ
-router.post("/addIngredientsFile", uploadIngred.single("image"), (req, res) => {
-    let body = req.body
-    let path = pathHttp + req.file.path
-    jwt.verify(body.token, key, (err, authData) => {
-        if (err) {
-            return res.json({
-                message: err
-            })
-        }
+//เพิ่มreport image
+router.post("/addreportImage", uploadReport.single("image"), (req, res) => {
 
-        //let uid = authData.user
-        pool.query("INSERT INTO `pj_ingredients_file` (`name`, `image`) VALUES (?, ?)", [body.name, path], (error, result, field) => {
-            if (error) {
-                res.json({
-                    message: err
-                })
-            }
-            if (result.affectedRows == 1) {
-                return res.json({
-                    success: 1,
-                    message: "เพิ่มข้อมูลวัตถุดิบเข้าระบบ สำเร็จ"
-                })
-            }
-        })
-    })
+    if (req.file == undefined) {
+        res.json({ path: "" })
+    } else {
+        let path = pathHttp + req.file.path
+        res.json({ path: path })
+    }
 
     //console.log(req.file)
 })
@@ -129,7 +112,7 @@ router.post("/createPost", uploadRecipe.single("image"), (req, res) => {
 
         let uid = authData.user
         //console.log(parseFloat(body.price))
-        pool.query("INSERT INTO `pj_recipe` (`user_ID`, `recipe_name`, `image`, `date`,`suitable_for`, `take_time`, `food_category`, `description`,`price`) VALUES (?, ?, ?, now(),?,?,?,?,?)", [uid, body.recipe_name, path, body.suitable_for,body.take_time,body.food_category,body.description,body.price], (error, results, field) => {
+        pool.query("INSERT INTO `pj_recipe` (`user_ID`, `recipe_name`, `image`, `date`,`suitable_for`, `take_time`, `food_category`, `description`,`price`) VALUES (?, ?, ?, now(),?,?,?,?,?)", [uid, body.recipe_name, path, body.suitable_for, body.take_time, body.food_category, body.description, body.price], (error, results, field) => {
             if (error) {
                 res.json({
                     message: error
@@ -292,7 +275,7 @@ router.get("/mypost/:id", (req, res) => {
                                     let countLoop = 0
                                     let resultRecipeNew = []
                                     let dataScore = []
-                                    
+
                                     if (resultRecipe.length != 0) {
                                         resultRecipe.forEach(element => {
                                             pool.query("SELECT AVG(pj_score.score) as score FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAvg, field) => {
@@ -332,7 +315,7 @@ router.get("/mypost/:id", (req, res) => {
                                             })
                                         });
 
-                                    }else{
+                                    } else {
                                         let newData = {
                                             user_ID: result[0].user_ID,
                                             name_surname: result[0].name_surname,
@@ -559,47 +542,47 @@ router.get("/newfeeds", auth.verifyToken, (req, res) => {
             let listUserID = new Array()
             listUserID.push(uid)
 
-            resultID.forEach(element =>{
+            resultID.forEach(element => {
                 listUserID.push(element.following_ID)
             })
             let newData = new Array()
-            listUserID.forEach(element =>{
+            listUserID.forEach(element => {
                 //console.log(element)
-               
 
-                pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID AND pj_user.user_ID = ? ORDER BY pj_recipe.date DESC",[element],(error,resultData,field) =>{
+
+                pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID AND pj_user.user_ID = ? ORDER BY pj_recipe.date DESC", [element], (error, resultData, field) => {
                     //console.log(resultData)
 
-                    if(resultData != ""){
-                        resultData.forEach(e =>{
+                    if (resultData != "") {
+                        resultData.forEach(e => {
                             newData.push(e)
-                            
+
                         })
                     }
 
-                    if(element == listUserID[listUserID.length-1]){
-                        newData.sort(function(a,b){
+                    if (element == listUserID[listUserID.length - 1]) {
+                        newData.sort(function (a, b) {
                             // Turn your strings into dates, and then subtract them
                             // to get a value that is either negative, positive, or zero.
                             return new Date(b.date) - new Date(a.date);
-                          });
+                        });
 
                         res.json({
                             success: 1,
                             feed: newData
                         })
-                       
+
                     }
                 })
             })
-    
+
         })
 
     })
 })
 
-router.get("/newfeedsglobal",(req,res) =>{
-    pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID  ORDER BY pj_recipe.date DESC",(error,result,field) =>{
+router.get("/newfeedsglobal", (req, res) => {
+    pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID  ORDER BY pj_recipe.date DESC", (error, result, field) => {
         res.json(result)
     })
 })
@@ -634,7 +617,7 @@ router.get("/getPost/:rid", (req, res) => {
                                             let newData = {
                                                 rid: resultRecipe[0].rid,
                                                 user_ID: resultRecipe[0].user_ID,
-                                                name_surname : resultRecipe[0].name_surname,
+                                                name_surname: resultRecipe[0].name_surname,
                                                 alias_name: resultRecipe[0].alias_name,
                                                 profile_image: resultRecipe[0].profile_image,
                                                 recipe_name: resultRecipe[0].recipe_name,
@@ -749,7 +732,7 @@ router.get("/searchRecipeName/:name", (req, res) => {
         let countLoop = 0
         let data = []
         let newData = []
-        if(result.length == 0){
+        if (result.length == 0) {
             res.json({
                 data: []
             })
@@ -846,143 +829,143 @@ router.get("/searchWithCategory/:name", (req, res) => {
         if (error) { res.json({ message: error }) }
         else {
             //console.log(results)
-            if(results == "" || results == null){
-                res.json({message:"ไม่พบหมวดหมู่ "+name+ " ในการค้นหานี้ "})
-            }else{
+            if (results == "" || results == null) {
+                res.json({ message: "ไม่พบหมวดหมู่ " + name + " ในการค้นหานี้ " })
+            } else {
                 let dataScore = []
-            let countLoop = 0
-            let dataRecipe = []
-            results.forEach(element =>{
-                pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error ,score1,filed) =>{
-                    if (error) { res.json({ message: error }) }
-                    else{
-                        if(score1[0].score != null){
-                            dataScore.push(score1[0].score)
-                        }else{         
-                            dataScore.push(0)
+                let countLoop = 0
+                let dataRecipe = []
+                results.forEach(element => {
+                    pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, score1, filed) => {
+                        if (error) { res.json({ message: error }) }
+                        else {
+                            if (score1[0].score != null) {
+                                dataScore.push(score1[0].score)
+                            } else {
+                                dataScore.push(0)
+                            }
+
+                            dataRecipe.push({
+                                rid: results[countLoop].rid,
+                                user_ID: results[countLoop].user_ID,
+                                name_surname: results[countLoop].name_surname,
+                                alias_name: results[countLoop].alias_name,
+                                profile_image: results[countLoop].profile_image,
+                                recipe_name: results[countLoop].recipe_name,
+                                food_category: results[countLoop].food_category,
+                                description: results[countLoop].description,
+                                image: results[countLoop].image,
+                                price: results[countLoop].price,
+                                score: dataScore[countLoop]
+                            })
+                            countLoop++
+                            if (countLoop == results.length) {
+
+
+                                res.json(dataRecipe)
+                            }
+
+
                         }
-     
-                        dataRecipe.push({
-                            rid: results[countLoop].rid,
-                            user_ID: results[countLoop].user_ID,
-                            name_surname: results[countLoop].name_surname,
-                            alias_name: results[countLoop].alias_name,
-                            profile_image: results[countLoop].profile_image,
-                            recipe_name: results[countLoop].recipe_name,
-                            food_category: results[countLoop].food_category,
-                            description: results[countLoop].description,
-                            image: results[countLoop].image,
-                            price: results[countLoop].price,
-                            score: dataScore[countLoop]
-                        })
-                        countLoop++
-                        if(countLoop == results.length){
-                            
-        
-                            res.json(dataRecipe)
-                        }
-                        
-                        
-                    }
+                    })
+
                 })
-                
-            })
             }
-            
-            
-            
-            
+
+
+
+
         }
     })
 })
 
-router.post("/buy",auth.verifyToken, (req,res) =>{
-    jwt.verify(req.token, key, (err, authData) =>{
-        if (err) { res.json({ success: 0,message: err }) }
+router.post("/buy", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ success: 0, message: err }) }
 
         let rid = req.body.rid
         let uid = authData.user
 
         //query price of recipe
-        pool.query("select user_ID,price from pj_recipe where rid = ? ",[rid],(error,resultR,field) =>{
-            if(error) {res.json({success: 0,message: error})}
-            else{
+        pool.query("select user_ID,price from pj_recipe where rid = ? ", [rid], (error, resultR, field) => {
+            if (error) { res.json({ success: 0, message: error }) }
+            else {
                 //query balance of user by id
-                if(resultR[0].price > 0){
-                    pool.query("select balance from pj_user where user_ID = ?",[uid],(error,balance,field) =>{
-                        if(error) {res.json({success: 0,message: error})}
-                        else{
-                            if(balance[0].balance >= resultR[0].price){
+                if (resultR[0].price > 0) {
+                    pool.query("select balance from pj_user where user_ID = ?", [uid], (error, balance, field) => {
+                        if (error) { res.json({ success: 0, message: error }) }
+                        else {
+                            if (balance[0].balance >= resultR[0].price) {
                                 //partner balance
                                 let myBalance = balance[0].balance - resultR[0].price
                                 let partnerBalance = resultR[0].price
                                 let partnerID = resultR[0].user_ID
 
                                 //query balance of partner for update
-                                pool.query("select balance from pj_user where user_ID = ?",[partnerID],(error2,balanceP,field) =>{
+                                pool.query("select balance from pj_user where user_ID = ?", [partnerID], (error2, balanceP, field) => {
                                     partnerBalance = balanceP[0].balance + partnerBalance
 
                                     //update all data
                                     //this update myBalance
-                                    pool.query("update pj_user set balance = ? where user_ID = ?",[myBalance,uid])
+                                    pool.query("update pj_user set balance = ? where user_ID = ?", [myBalance, uid])
                                     //this update partnerBalance
-                                    pool.query("update pj_user set balance = ? where user_ID = ?",[partnerBalance,partnerID])
+                                    pool.query("update pj_user set balance = ? where user_ID = ?", [partnerBalance, partnerID])
                                     let state = ""
                                     //insert data in buy table
-                                    pool.query("INSERT INTO `pj_buy` (`recipe_ID`, `user_ID`, `datetime`, `price`) VALUES (?, ?, now(), ?)",[rid,uid,resultR[0].price],(error,resultBuy,field) =>{
-                                        if(error){res.json({success: 0,message: error})}
-                                        else{ 
-                                            if(resultBuy.affectedRows == 1){
+                                    pool.query("INSERT INTO `pj_buy` (`recipe_ID`, `user_ID`, `datetime`, `price`) VALUES (?, ?, now(), ?)", [rid, uid, resultR[0].price], (error, resultBuy, field) => {
+                                        if (error) { res.json({ success: 0, message: error }) }
+                                        else {
+                                            if (resultBuy.affectedRows == 1) {
                                                 //insert transection of my by id
                                                 state = "buy_recipe"
-                                                pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)",[uid,state,resultR[0].price])
-                                                
+                                                pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)", [uid, state, resultR[0].price])
+
                                                 //insert data in sell table
-                                                pool.query("INSERT INTO `pj_sell` (`user_ID`,`partner_ID`, `recipe_ID`, `datetime`, `price`) VALUES (?, ?,?, now(), ?)",[partnerID,uid,rid,resultR[0].price],(error,resultSell,field) =>{
-                                                    if(error){res.json({message: error})}
-                                                    if(resultSell.affectedRows == 1){
+                                                pool.query("INSERT INTO `pj_sell` (`user_ID`,`partner_ID`, `recipe_ID`, `datetime`, `price`) VALUES (?, ?,?, now(), ?)", [partnerID, uid, rid, resultR[0].price], (error, resultSell, field) => {
+                                                    if (error) { res.json({ message: error }) }
+                                                    if (resultSell.affectedRows == 1) {
                                                         //insert transection of partner by id
                                                         state = "sell_recipe"
-                                                        pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)",[partnerID,state,resultR[0].price])
-                                                        res.json({success: 1,message: "ดำเนินการสำเร็จ"})
+                                                        pool.query("INSERT INTO `pj_transaction`(`user_ID`, `state`, `money`, `datetime`) VALUES (?,?,?,CURRENT_TIMESTAMP)", [partnerID, state, resultR[0].price])
+                                                        res.json({ success: 1, message: "ดำเนินการสำเร็จ" })
                                                     }
                                                 })
                                             }
                                         }
                                     })
-                                    
+
                                 })
-                                
-                            }else{
-                                res.json({success: 0,message: "เงินคุณไม่พอสำหรับซื้อสูตรอาหาร"})
+
+                            } else {
+                                res.json({ success: 0, message: "เงินคุณไม่พอสำหรับซื้อสูตรอาหาร" })
                             }
                         }
                     })
                 }
             }
-            
+
         })
 
     })
 })
 
-router.get("/mybuy",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message: err})}
+router.get("/mybuy", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
         let uid = authData.user
 
-        pool.query("select pj_buy.bid,pj_buy.recipe_ID,pj_buy.datetime,pj_buy.price,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.food_category,pj_recipe.description from pj_buy,pj_recipe where pj_recipe.rid = pj_buy.recipe_ID and pj_buy.user_ID = ?",[uid],(error,result,field) =>{
+        pool.query("select pj_buy.bid,pj_buy.recipe_ID,pj_buy.datetime,pj_buy.price,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.food_category,pj_recipe.description from pj_buy,pj_recipe where pj_recipe.rid = pj_buy.recipe_ID and pj_buy.user_ID = ?", [uid], (error, result, field) => {
             res.json(result)
         })
     })
 })
 
-router.get("/mysell",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message: err})}
+router.get("/mysell", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
         let uid = authData.user
 
-        pool.query("select pj_sell.sid,pj_sell.datetime,pj_recipe.recipe_name,pj_user.name_surname,pj_sell.price from pj_user,pj_recipe,pj_sell where pj_user.user_ID = pj_recipe.user_ID and pj_recipe.rid = pj_sell.recipe_ID and pj_sell.user_ID = ?",[uid],(error,result,field) =>{
+        pool.query("select pj_sell.sid,pj_sell.datetime,pj_recipe.recipe_name,pj_user.name_surname,pj_sell.price from pj_user,pj_recipe,pj_sell where pj_user.user_ID = pj_recipe.user_ID and pj_recipe.rid = pj_sell.recipe_ID and pj_sell.user_ID = ?", [uid], (error, result, field) => {
             res.json(result)
         })
     })
@@ -1018,80 +1001,80 @@ router.get("/test1",  (req,res) =>{
 
 
 
-router.post("/deleteRecipe",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message: err})}
+router.post("/deleteRecipe", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
         let uid = authData.user
         let rid = req.body.recipe_ID
 
-        pool.query("select count(pj_recipe.rid) as amountMyR from pj_recipe,pj_user where pj_user.user_ID = pj_recipe.user_ID and pj_user.user_ID = ? and pj_recipe.rid = ?",[uid,rid],(error,checkRes,field) =>{
-            
-            if(checkRes[0].amountMyR == 1){
-                pool.query("select count(bid) as amountR from pj_buy where recipe_ID = ?",[rid],(error,result,field) =>{
-                    if(result[0].amountR != 0){
-                        res.json({success: 0,message: "ไม่สามารถลบสูตรอาหารได้ เนื่องจากสูตรนี้ได้ทำการซื้อขายแล้ว"})
-                    }else{
+        pool.query("select count(pj_recipe.rid) as amountMyR from pj_recipe,pj_user where pj_user.user_ID = pj_recipe.user_ID and pj_user.user_ID = ? and pj_recipe.rid = ?", [uid, rid], (error, checkRes, field) => {
+
+            if (checkRes[0].amountMyR == 1) {
+                pool.query("select count(bid) as amountR from pj_buy where recipe_ID = ?", [rid], (error, result, field) => {
+                    if (result[0].amountR != 0) {
+                        res.json({ success: 0, message: "ไม่สามารถลบสูตรอาหารได้ เนื่องจากสูตรนี้ได้ทำการซื้อขายแล้ว" })
+                    } else {
                         //to do delete
-                        pool.query("delete from pj_notification where recipe_ID = ?",[rid])
-                        pool.query("delete from pj_comment where recipe_ID = ?",[rid])
-                        pool.query("delete from pj_howto where rid = ?",[rid])
-                        pool.query("delete from pj_score where recipe_ID = ?",[rid])
-                        pool.query("delete from pj_ingredients where rid = ?",[rid])
-                        pool.query("delete from pj_recipe where rid = ?",[rid],(error,resultReci,field) =>{
-                            if(resultReci.affectedRows != 0){
-                                res.json({success: 1,message: "ดำเนินการสำเร็จ!"})
+                        pool.query("delete from pj_notification where recipe_ID = ?", [rid])
+                        pool.query("delete from pj_comment where recipe_ID = ?", [rid])
+                        pool.query("delete from pj_howto where rid = ?", [rid])
+                        pool.query("delete from pj_score where recipe_ID = ?", [rid])
+                        pool.query("delete from pj_ingredients where rid = ?", [rid])
+                        pool.query("delete from pj_recipe where rid = ?", [rid], (error, resultReci, field) => {
+                            if (resultReci.affectedRows != 0) {
+                                res.json({ success: 1, message: "ดำเนินการสำเร็จ!" })
                             }
                         })
 
                     }
-        
+
                 })
-            }else{
-                res.json({success:0,message: "hacker!!"})
+            } else {
+                res.json({ success: 0, message: "hacker!!" })
             }
-            
+
         })
-        
-       
+
+
     })
 })
 
 //random recipe
-router.get("/recommendRecipe",(req,res) =>{
+router.get("/recommendRecipe", (req, res) => {
     //SELECT pj_recipe.rid ,pj_user.user_ID, pj_user.name_surname FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 5 
 
-    pool.query("SELECT pj_recipe.rid ,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.price,pj_recipe.food_category,pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 5 ",(error,result,field) =>{
+    pool.query("SELECT pj_recipe.rid ,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.price,pj_recipe.food_category,pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 5 ", (error, result, field) => {
         let arr_rid = new Array()
 
-        result.forEach(element =>{
+        result.forEach(element => {
             arr_rid.push(element.rid)
         })
         let newData = new Array()
         let countLoop = 0
         let dataRecipe = new Array()
-        arr_rid.forEach(element =>{
-            pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ? ",[element],(error,resultAvg,field) =>{
-                if(resultAvg[0].score != null){
+        arr_rid.forEach(element => {
+            pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ? ", [element], (error, resultAvg, field) => {
+                if (resultAvg[0].score != null) {
                     newData.push(resultAvg[0].score)
-                }else{
+                } else {
                     newData.push(0)
                 }
 
                 dataRecipe.push({
-                            rid: result[countLoop].rid,
-                            user_ID: result[countLoop].user_ID,
-                            name_surname: result[countLoop].name_surname,
-                            alias_name: result[countLoop].alias_name,
-                            profile_image: result[countLoop].profile_image,
-                            recipe_name: result[countLoop].recipe_name,
-                            food_category: result[countLoop].food_category,
-                            image: result[countLoop].image,
-                            price: result[countLoop].price,
-                            score: newData[countLoop]
+                    rid: result[countLoop].rid,
+                    user_ID: result[countLoop].user_ID,
+                    name_surname: result[countLoop].name_surname,
+                    alias_name: result[countLoop].alias_name,
+                    profile_image: result[countLoop].profile_image,
+                    recipe_name: result[countLoop].recipe_name,
+                    food_category: result[countLoop].food_category,
+                    image: result[countLoop].image,
+                    price: result[countLoop].price,
+                    score: newData[countLoop]
                 })
                 countLoop++
 
-                if(countLoop == result.length){
+                if (countLoop == result.length) {
                     res.json(dataRecipe)
                 }
 
@@ -1102,31 +1085,31 @@ router.get("/recommendRecipe",(req,res) =>{
     })
 })
 
-router.get("/getMyScore/:rid",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message:err})}
+router.get("/getMyScore/:rid", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
 
         let uid = authData.user
         let rid = req.params.rid
 
-        pool.query("select score from pj_score where user_ID = ? and recipe_ID = ?",[uid,rid],(error,result,field) =>{
-            
-            if(result == "" || result == null){
-                res.json({score: 0})
-            }else{
-                res.json({score: result[0].score})
+        pool.query("select score from pj_score where user_ID = ? and recipe_ID = ?", [uid, rid], (error, result, field) => {
+
+            if (result == "" || result == null) {
+                res.json({ score: 0 })
+            } else {
+                res.json({ score: result[0].score })
             }
         })
     })
 })
 
-router.post("/deleteComment",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
-        if(err){res.json({message: err})}
-        
+router.post("/deleteComment", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
+
         let uid = authData.user
         let cid = req.body.cid
-        pool.query("delete from pj_comment where user_ID = ? and cid = ?",[uid,cid],(error,results,field) =>{
+        pool.query("delete from pj_comment where user_ID = ? and cid = ?", [uid, cid], (error, results, field) => {
             if (results.affectedRows == 1) {
                 return res.json({
                     success: 1
@@ -1139,6 +1122,151 @@ router.post("/deleteComment",auth.verifyToken,(req,res) =>{
         })
     })
 })
+
+router.post("/addReport", auth.verifyToken, (req, res) => {
+
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
+
+        let userReport_ID = authData.user
+        let body = req.body
+
+        pool.query("insert into pj_report (userTarget_ID,userReport_ID,datetime,type_report,recipe_ID,title,description,image) values (?,?,now(),?,?,?,?,?)", [body.userTarget_ID, userReport_ID, body.type_report, body.recipe_ID, body.title, body.description, body.image], (error, result, field) => {
+            if (result.affectedRows == 1) {
+                res.json({
+                    success: 1,
+                    message: "คุณได้ทำการส่งการรายงานสำเร็จ"
+                })
+            } else {
+                res.json({
+                    success: 0,
+                    message: "มีบางอย่างผิดพลาด โปรดลองอีกครั้ง"
+                })
+            }
+        })
+    })
+})
+
+router.get("/getReport/:report_ID", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
+        let report_ID = req.params.report_ID
+        //let userTarget_ID = req.body.userTarget_ID
+
+        let dataReport
+        //
+        pool.query("select * from pj_report where report_ID = ?", [report_ID], (error, reportResult, field) => {
+            //res.json(reportResult)
+
+            //userTarget
+            pool.query("select name_surname,alias_name,profile_image from pj_user where user_ID = ?",[reportResult[0].userTarget_ID],(error,dataTarget,field) =>{
+
+                //userReport
+                pool.query("select name_surname,alias_name,profile_image from pj_user where user_ID = ?",[reportResult[0].userReport_ID],(error,dataUserReport,field) =>{
+
+                    pool.query("select recipe_name,image from pj_recipe where rid =?",[reportResult[0].recipe_ID],(error,dataRecipe,field) =>{
+                        
+                        let dataOfRecipe = ""
+                        //console.log(reportResult[0].recipe_ID)
+                        if(reportResult[0].recipe_ID  != null){
+                            dataOfRecipe = {
+                                recipe_ID: reportResult[0].recipe_ID,
+                                recipe_name:  dataRecipe[0].recipe_name,
+                                recipe_image:  dataRecipe[0].image
+                            }
+                        }else{
+                            dataOfRecipe = {
+                                recipe_ID: null,
+                                recipe_name:  null,
+                                recipe_image:  null
+                            }
+                        }
+                        dataReport = {
+                            report_ID: reportResult[0].report_ID,
+                            type_report: reportResult[0].type_report,
+                            title: reportResult[0].title,
+                            description: reportResult[0].description,
+                            dataTarget: {
+                                userTarget_ID: reportResult[0].userTarget_ID,
+                                name_userTarget: dataTarget[0].name_surname,
+                                alias_userTarget: dataTarget[0].alias_name,
+                                profile_userTarget: dataTarget[0].profile_image
+                            },
+                            dataUserReport: {
+                                userReport: reportResult[0].userReport_ID,
+                                name_userReport: dataUserReport[0].name_surname,
+                                alias_userReport: dataTarget[0].alias_name,
+                                profile_userReport: dataTarget[0].profile_image
+                            },
+                            dataRecipe: dataOfRecipe,
+                            image: reportResult[0].image
+                        }
+    
+                        res.json(dataReport)
+
+                    })
+                    
+                    
+                })
+            })
+
+        })
+    })
+})
+
+router.post("/deleteReport", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        if (err) { res.json({ message: err }) }
+        let report_ID = req.body.report_ID
+        pool.query("delete from pj_report where report_ID = ?", [report_ID], (err, result, field) => {
+            if (result.affectedRows == 1) {
+                return res.json({
+                    success: 1
+                })
+            } else {
+                return res.json({
+                    success: 0
+                })
+            }
+        })
+    })
+})
+
+router.get("/getAllReport", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        pool.query("select pj_report.report_ID,pj_report.userTarget_ID,pj_report.userReport_ID,pj_report.datetime,pj_report.type_report,pj_report.title,pj_user.name_surname as name_userReport from pj_report,pj_user where pj_user.user_ID = pj_report.userReport_ID ", (error, result, field) => {
+
+            let newData = new Array()
+            let countLoop = 0
+            result.forEach(element => {
+                //console.log(element.userTarget_ID)
+                pool.query("select name_surname from pj_user where user_ID = ?", [element.userTarget_ID], (error, resultTarget, field) => {
+                    newData.push({
+
+                        report_ID: element.report_ID,
+                        userTarget_ID: element.userTarget_ID,
+                        name_userReport: element.name_userReport,
+                        userReport_ID: element.userReport_ID,
+                        name_userReport: resultTarget[0].name_surname,
+                        datetime: element.datetime,
+                        type_report: element.type_report,
+                        title: element.title,
+                        
+                    })
+                    countLoop++
+                    //console.log(resultTarget)
+                    if(countLoop == result.length){
+                        //console.log(newData)
+                        res.json(newData)
+                    }
+                })
+            })
+            //res.json(result)
+        })
+    })
+})
+
+
 
 
 

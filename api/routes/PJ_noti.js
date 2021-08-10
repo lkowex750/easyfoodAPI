@@ -153,7 +153,7 @@ router.post("/insertNotificationData",(req,res)=>{
 
     let body = req.body
    
-    pool.query("INSERT INTO `pj_notification` (`my_ID`, `state`, `description`, `date`, `visited`, `recipe_ID`, `from_userid`) VALUES (?, ?, ?, now(), false, ?, ?)",[body.my_ID,body.state,body.description,body.recipe_ID,body.from_userid],(error,result,field) =>{
+    pool.query("INSERT INTO `pj_notification` (`my_ID`, `state`, `description`, `date`, `visited`,`status`, `recipe_ID`, `from_userid`) VALUES (?, ?, ?, now(), false,? , ?, ?)",[body.my_ID,body.state,body.description,body.status,body.recipe_ID,body.from_userid],(error,result,field) =>{
         if (result.affectedRows == 1) {
             return res.json({
                 success: 1
@@ -224,6 +224,7 @@ router.get("/getNotification",auth.verifyToken,(req,res) =>{
                                 description: element.description,
                                 date: element.date,
                                 visited: element.visited,
+                                status: element.status,
                                 recipe_ID: element.recipe_ID,
                                 
                                 from_userid: element.from_userid,
@@ -254,6 +255,27 @@ router.get("/getNotification",auth.verifyToken,(req,res) =>{
         })
     })
 })
+
+router.post("/setVisited",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+
+        let uid = authData.user
+
+        pool.query("update pj_notification set visited = true where my_ID = ?",[uid],(error,result,field) =>{
+            
+                return res.json({
+                    success: 1
+                })
+            
+        })
+
+    })
+})
+
+
+
+
+
 
 
 
