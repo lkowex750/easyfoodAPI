@@ -1238,29 +1238,35 @@ router.get("/getAllReport", auth.verifyToken, (req, res) => {
 
             let newData = new Array()
             let countLoop = 0
-            result.forEach(element => {
-                //console.log(element.userTarget_ID)
-                pool.query("select name_surname from pj_user where user_ID = ?", [element.userTarget_ID], (error, resultTarget, field) => {
-                    newData.push({
 
-                        report_ID: element.report_ID,
-                        userTarget_ID: element.userTarget_ID,
-                        name_userReport: element.name_userReport,
-                        userReport_ID: element.userReport_ID,
-                        name_userReport: resultTarget[0].name_surname,
-                        datetime: element.datetime,
-                        type_report: element.type_report,
-                        title: element.title,
-                        
+            if(result != "" || result == null){
+                result.forEach(element => {
+                    //console.log(element.userTarget_ID)
+                    pool.query("select name_surname from pj_user where user_ID = ?", [element.userTarget_ID], (error, resultTarget, field) => {
+                        newData.push({
+    
+                            report_ID: element.report_ID,
+                            userTarget_ID: element.userTarget_ID,
+                            name_userReport: element.name_userReport,
+                            userReport_ID: element.userReport_ID,
+                            name_userReport: resultTarget[0].name_surname,
+                            datetime: element.datetime,
+                            type_report: element.type_report,
+                            title: element.title,
+                            
+                        })
+                        countLoop++
+                        //console.log(resultTarget)
+                        if(countLoop == result.length){
+                            //console.log(newData)
+                            res.json(newData)
+                        }
                     })
-                    countLoop++
-                    //console.log(resultTarget)
-                    if(countLoop == result.length){
-                        //console.log(newData)
-                        res.json(newData)
-                    }
                 })
-            })
+            }else{
+                res.json([])
+            }
+            
             //res.json(result)
         })
     })
