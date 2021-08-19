@@ -815,7 +815,7 @@ router.post("/commentPost", auth.verifyToken, (req, res) => {
 
 router.get("/getComment/:rid", (req, res) => {
     let rid = req.params.rid
-    pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC", [rid], (error, results, filed) => {
+    pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_user.user_status,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC", [rid], (error, results, filed) => {
         if (error) { res.json({ message: error }) }
         else {
             res.json(results)
@@ -1159,26 +1159,26 @@ router.get("/getReport/:report_ID", auth.verifyToken, (req, res) => {
             //res.json(reportResult)
 
             //userTarget
-            pool.query("select name_surname,alias_name,profile_image from pj_user where user_ID = ?",[reportResult[0].userTarget_ID],(error,dataTarget,field) =>{
+            pool.query("select name_surname,alias_name,profile_image from pj_user where user_ID = ?", [reportResult[0].userTarget_ID], (error, dataTarget, field) => {
 
                 //userReport
-                pool.query("select name_surname,alias_name,profile_image from pj_user where user_ID = ?",[reportResult[0].userReport_ID],(error,dataUserReport,field) =>{
+                pool.query("select name_surname,alias_name,profile_image from pj_user where user_ID = ?", [reportResult[0].userReport_ID], (error, dataUserReport, field) => {
 
-                    pool.query("select recipe_name,image from pj_recipe where rid =?",[reportResult[0].recipe_ID],(error,dataRecipe,field) =>{
-                        
+                    pool.query("select recipe_name,image from pj_recipe where rid =?", [reportResult[0].recipe_ID], (error, dataRecipe, field) => {
+
                         let dataOfRecipe = ""
                         //console.log(reportResult[0].recipe_ID)
-                        if(reportResult[0].recipe_ID  != null){
+                        if (reportResult[0].recipe_ID != null) {
                             dataOfRecipe = {
                                 recipe_ID: reportResult[0].recipe_ID,
-                                recipe_name:  dataRecipe[0].recipe_name,
-                                recipe_image:  dataRecipe[0].image
+                                recipe_name: dataRecipe[0].recipe_name,
+                                recipe_image: dataRecipe[0].image
                             }
-                        }else{
+                        } else {
                             dataOfRecipe = {
                                 recipe_ID: null,
-                                recipe_name:  null,
-                                recipe_image:  null
+                                recipe_name: null,
+                                recipe_image: null
                             }
                         }
                         dataReport = {
@@ -1195,18 +1195,18 @@ router.get("/getReport/:report_ID", auth.verifyToken, (req, res) => {
                             dataUserReport: {
                                 userReport: reportResult[0].userReport_ID,
                                 name_userReport: dataUserReport[0].name_surname,
-                                alias_userReport: dataTarget[0].alias_name,
-                                profile_userReport: dataTarget[0].profile_image
+                                alias_userReport: dataUserReport[0].alias_name,
+                                profile_userReport: dataUserReport[0].profile_image
                             },
                             dataRecipe: dataOfRecipe,
                             image: reportResult[0].image
                         }
-    
+
                         res.json(dataReport)
 
                     })
-                    
-                    
+
+
                 })
             })
 
@@ -1239,34 +1239,36 @@ router.get("/getAllReport", auth.verifyToken, (req, res) => {
             let newData = new Array()
             let countLoop = 0
 
-            if(result != "" || result == null){
+            if (result != "" || result == null) {
                 result.forEach(element => {
                     //console.log(element.userTarget_ID)
-                    pool.query("select name_surname from pj_user where user_ID = ?", [element.userTarget_ID], (error, resultTarget, field) => {
+                    pool.query("select name_surname,alias_name, profile_image from pj_user where user_ID = ?", [element.userReport_ID], (error, resultReport, field) => {
                         newData.push({
-    
+
                             report_ID: element.report_ID,
                             userTarget_ID: element.userTarget_ID,
                             name_userReport: element.name_userReport,
                             userReport_ID: element.userReport_ID,
-                            name_userReport: resultTarget[0].name_surname,
+                            name_userReport: resultReport[0].name_surname,
+                            alias_userReport: resultReport[0].alias_name,
+                            profile_userReport: resultReport[0].profile_image,
                             datetime: element.datetime,
                             type_report: element.type_report,
                             title: element.title,
-                            
+
                         })
                         countLoop++
                         //console.log(resultTarget)
-                        if(countLoop == result.length){
+                        if (countLoop == result.length) {
                             //console.log(newData)
                             res.json(newData)
                         }
                     })
                 })
-            }else{
+            } else {
                 res.json([])
             }
-            
+
             //res.json(result)
         })
     })

@@ -423,7 +423,7 @@ router.get("/searchUser/:data", (req, res) => {
 
     let data = req.params.data
     console.log(data)
-    pool.query("SELECT `user_ID`,`name_surname`,`alias_name`,`profile_image` FROM `pj_user` WHERE `name_surname` LIKE concat(?,'%') OR `alias_name` LIKE concat(?,'%') ORDER BY `name_surname`,`alias_name` ASC", [data, data], (error, results, field) => {
+    pool.query("SELECT `user_ID`,`name_surname`,`alias_name`,`profile_image`,`access_status` FROM `pj_user` WHERE `name_surname` LIKE concat(?,'%') OR `alias_name` LIKE concat(?,'%') ORDER BY `name_surname`,`alias_name` ASC", [data, data], (error, results, field) => {
         res.json({
             data: results
         })
