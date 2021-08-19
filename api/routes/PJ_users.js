@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken')
 var auth = require('../../check-auth/auth')
 var key = "easycook"
 let pathHttp = "https://apifood.comsciproject.com" + '/'
+let pathLocal = "http://localhost:3000" + '/'
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -583,6 +584,8 @@ var omise = require('omise')({
     'secretKey': 'skey_test_5ltiefp7zi000pp3fso',
 });
 
+const axios = require('axios').default;
+
 async function omiseTopup() {
     /*
     call omise API
@@ -611,9 +614,9 @@ async function omiseWithdraw(req) {
 }
 //tokn_test_5ow4zm8tloykpgp4w38
 //4242424242424242
-router.post("/topup",  async (req, res) => {
-    let  tokenUser =  req.body.token
-   await jwt.verify(tokenUser, key, async (err, authData) => {
+router.post("/topup", async (req, res) => {
+    let tokenUser = req.body.token
+    await jwt.verify(tokenUser, key, async (err, authData) => {
         if (err) {
             return res.json({
                 message: err
@@ -623,7 +626,7 @@ router.post("/topup",  async (req, res) => {
         try {
             let body = req.body
             let user_ID = authData.user
-
+            let moneyC = req.body.amount * 100
             var cardDetails = {
                 card: {
                     'name': body.name,
@@ -645,7 +648,7 @@ router.post("/topup",  async (req, res) => {
                 .then(function (customer) {
                     console.log(customer)
                     return omise.charges.create({
-                        'amount': body.amount,
+                        'amount': moneyC,
                         'currency': 'thb',
                         'customer': customer.id,
                     })
@@ -653,9 +656,28 @@ router.post("/topup",  async (req, res) => {
                     console.log(charge.status)
                     if (charge.status == "successful") {
 
-                        res.json({
-                            success: 1
+
+                        axios.post(pathHttp + 'pjUsers/updateMoney', {
+                            state: 'topup',
+                            money: moneyC / 100
+                        }, {
+                            headers: {
+                                'Authorization': 'Bearer ' + tokenUser
+                            }
+
                         })
+                            .then(function (response) {
+                                // handle success
+                                console.log(response.data.balance);
+                                res.json({
+                                    success: 1,
+                                    balance: response.data.balance
+                                })
+                            })
+
+                        // res.json({
+                        //     success: 1
+                        // })
                     } else {
                         res.json({
                             success: 0
