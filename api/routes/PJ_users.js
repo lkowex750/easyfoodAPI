@@ -208,20 +208,20 @@ router.post("/signin", (req, res) => {
             })
         }
         pool.query("SELECT  * FROM `pj_user` WHERE `email` = ? and `password` = ?", [body.email, results[0].password], (err, results, field) => {
-            if(results[0].access_status != 0){
+            if (results[0].access_status != 0) {
                 jwt.sign({ user: results[0].user_ID }, key, (err, token) => {
                     return res.json({
                         success: 1,
                         token
                     })
                 })
-            }else{
+            } else {
                 res.json({
                     success: 0,
                     token: "ผู้ใช้ถูก แบน!!"
                 })
             }
-            
+
 
 
         })
@@ -306,7 +306,7 @@ router.post('/loginFacebook', (req, res) => {
 //return path
 
 router.post("/uploadProfile", upload.single("profile_image"), (req, res) => {
-    let path = pathHttp+ req.file.path
+    let path = pathHttp + req.file.path
     let body = req.body
 
     jwt.verify(body.token, key, (error, authData) => {
@@ -558,25 +558,30 @@ router.get("/profileUser/:uid", (req, res) => {
 })
 
 
-router.post("/topup", auth.verifyToken, (req, res) => {
-    jwt.verify(req.token, key, async (err, authData) => {
-        try {
-            if (err) { res.json({ message: err }) }
-            let uid = authData.user
-            let status = await omiseTopup()
-            if (status.status == "successful") {
-                res.json(status)
+// router.post("/topup", auth.verifyToken, (req, res) => {
+//     jwt.verify(req.token, key, async (err, authData) => {
+//         try {
+//             if (err) { res.json({ message: err }) }
+//             let uid = authData.user
+//             let status = await omiseTopup()
+//             if (status.status == "successful") {
+//                 res.json(status)
 
 
-            } else {
-                res.json({ message: "err" })
-            }
-        } catch (error) {
-            console.log(error)
-        }
+//             } else {
+//                 res.json({ message: "err" })
+//             }
+//         } catch (error) {
+//             console.log(error)
+//         }
 
-    })
-})
+//     })
+// })
+
+var omise = require('omise')({
+    'publicKey': 'pkey_test_5ltiefp7q301c9jjyuo',
+    'secretKey': 'skey_test_5ltiefp7zi000pp3fso',
+});
 
 async function omiseTopup() {
     /*
@@ -604,6 +609,74 @@ async function omiseWithdraw(req) {
     } //return omise
     return status
 }
+//tokn_test_5ow4zm8tloykpgp4w38
+//4242424242424242
+router.post("/topup",  async (req, res) => {
+    let  tokenUser =  req.body.token
+   await jwt.verify(tokenUser, key, async (err, authData) => {
+        if (err) {
+            return res.json({
+                message: err
+            })
+        }
+
+        try {
+            let body = req.body
+            let user_ID = authData.user
+
+            var cardDetails = {
+                card: {
+                    'name': body.name,
+
+                    'number': body.number,
+                    'expiration_month': body.month,
+                    'expiration_year': body.year,
+                },
+            };
+
+            const token = await omise.tokens.create(cardDetails).then(function (token) {
+                console.log(token)
+                return omise.customers.create({
+                    'email': 'john.doe@example.com',
+                    'description': 'John Doe (id: 30)',
+                    'card': token.id,
+                })
+            })
+                .then(function (customer) {
+                    console.log(customer)
+                    return omise.charges.create({
+                        'amount': body.amount,
+                        'currency': 'thb',
+                        'customer': customer.id,
+                    })
+                }).then(function (charge) {
+                    console.log(charge.status)
+                    if (charge.status == "successful") {
+
+                        res.json({
+                            success: 1
+                        })
+                    } else {
+                        res.json({
+                            success: 0
+                        })
+                    }
+
+                }).error(function (err) {
+                    console.log(err)
+                    //   res.json({
+                    //       success: 0
+                    //   })
+                }).done()
+        } catch (error) {
+            console.log(error)
+        }
+
+    })
+
+
+
+})
 
 
 
@@ -698,63 +771,63 @@ router.post("/withdraw", auth.verifyToken, (req, res) => {
                             })
                         }
                     });
-                }else{
-                    res.json({  status: "failed",message: "you don't have transaction!" })
+                } else {
+                    res.json({ status: "failed", message: "you don't have transaction!" })
                 }
             }
         })
     })
 })
 
-router.get("/recommendUser",(req,res) =>{
+router.get("/recommendUser", (req, res) => {
     //select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image ,COUNT(*) as amount FROM pj_follow,pj_user GROUP BY pj_follow.following_ID ORDER BY amount DESC LIMIT 5
-//select pj_follow.following_ID ,COUNT(*) as amount FROM pj_follow GROUP BY pj_follow.following_ID ORDER BY amont DESC LIMIT 5
-    pool.query("select pj_follow.following_ID ,COUNT(*) as amount FROM pj_follow GROUP BY pj_follow.following_ID ORDER BY amount DESC LIMIT 5",(error,result,field) =>{
+    //select pj_follow.following_ID ,COUNT(*) as amount FROM pj_follow GROUP BY pj_follow.following_ID ORDER BY amont DESC LIMIT 5
+    pool.query("select pj_follow.following_ID ,COUNT(*) as amount FROM pj_follow GROUP BY pj_follow.following_ID ORDER BY amount DESC LIMIT 5", (error, result, field) => {
         let data = new Array()
-        result.forEach(element =>{
+        result.forEach(element => {
             data.push(element.following_ID)
         })
         let newData = []
         let countLoop = 0
 
         //มีสองแบบ แบบแรกจะเหมือนฟิกเอาคนที่มีผู้ติดตามเยอะมาโชว์ แบบสองจะเป็นสุ่ม
-        if(data.length == 5){  
-            data.forEach(element =>{
-                pool.query("select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image from pj_user where pj_user.user_ID = ?",[element],(error,resultData,field) =>{
+        if (data.length == 5) {
+            data.forEach(element => {
+                pool.query("select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image from pj_user where pj_user.user_ID = ?", [element], (error, resultData, field) => {
                     newData[countLoop] = {
                         user_ID: resultData[0].user_ID,
                         name_surname: resultData[0].name_surname,
                         alias_name: resultData[0].alias_name,
                         profile_image: resultData[0].profile_image,
                         amountFollower: result[countLoop].amount
-                    } 
+                    }
                     countLoop++
 
-                    if(countLoop == data.length){
+                    if (countLoop == data.length) {
                         res.json(newData)
                     }
                 })
             })
-        }else{
-            pool.query("select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image from pj_user ORDER BY RAND() LIMIT 5",(error,resultData,field) =>{
+        } else {
+            pool.query("select pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image from pj_user ORDER BY RAND() LIMIT 5", (error, resultData, field) => {
                 data = new Array()
-                resultData.forEach(element =>{
+                resultData.forEach(element => {
                     data.push(element.user_ID)
                 })
 
-                data.forEach(element=>{
-                    pool.query("select count(follow_ID) as amountFollower from pj_follow where following_ID = ?",[element],(error,resultFol,filed) =>{
+                data.forEach(element => {
+                    pool.query("select count(follow_ID) as amountFollower from pj_follow where following_ID = ?", [element], (error, resultFol, filed) => {
                         newData[countLoop] = {
                             user_ID: resultData[countLoop].user_ID,
                             name_surname: resultData[countLoop].name_surname,
                             alias_name: resultData[countLoop].alias_name,
                             profile_image: resultData[countLoop].profile_image,
                             amountFollower: resultFol[0].amountFollower
-                        } 
+                        }
                         countLoop++
-    
-                        if(countLoop == data.length){
-                            newData.sort(function(a,b){
+
+                        if (countLoop == data.length) {
+                            newData.sort(function (a, b) {
                                 return b.amountFollower - a.amountFollower
                             })
                             res.json(newData)
