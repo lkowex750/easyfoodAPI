@@ -699,6 +699,78 @@ router.post("/topup", async (req, res) => {
 
 
 })
+// curl https://api.omise.co/transfers/trsf_test_5owfia4pppx2la82v4c/mark_as_sent \
+//   -X POST \
+//   -u skey_test_5ltiefp7zi000pp3fso:
+
+
+router.post("/wdOmise", async (req, res) => {
+    try {
+        const recipient = await omise.recipients.create({
+            'name': 'Somchai Prasert',
+            'email': 'somchai.prasert@example.com',
+            'type': 'individual',
+            'bank_account': {
+                'brand': 'bbl',
+                'number': '1234567890',
+                'name': 'SOMCHAI PRASERT'
+            }
+        }).then(function (recipient) {
+            //console.log(recipient.id)
+            return omise.transfers.create({ 'amount': '10000', 'recipient': recipient.id }
+            ).then(function (transfers) {
+                console.log(transfers)
+                return res.json({
+                    id: transfers.id
+                })
+
+            })
+        })
+    } catch (error) {
+
+    }
+})
+
+
+//const pathFile = require("./jsonData/transferData.json")
+const fs = require("fs")
+router.post("/webhooks", async (req, res) => {
+    try {
+        const { data, key } = req.body
+
+        //const charge = {};
+        if (key === 'transfer.pay' || key === 'transfer.send') {
+            
+            if (data.paid == true && data.sent == true) {
+
+                console.log(data.id)
+                console.log(data.amount/100)
+               
+                // pool.query("select id from pj_wd_status where id = ?",[data.id],(err,result,field) =>{
+
+                // })
+
+
+
+            } else{
+                console.log(data.id)
+                console.log(data.amount/100)
+               
+
+            }
+
+
+
+            
+
+
+
+        }
+
+    } catch (error) {
+
+    }
+})
 
 
 
