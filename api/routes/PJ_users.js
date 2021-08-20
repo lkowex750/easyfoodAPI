@@ -704,28 +704,90 @@ router.post("/topup", async (req, res) => {
 //   -u skey_test_5ltiefp7zi000pp3fso:
 
 
-router.post("/wdOmise", async (req, res) => {
+router.post("/withdraw", (req, res) => {
     try {
-        const recipient = await omise.recipients.create({
-            'name': 'Somchai Prasert',
-            'email': 'somchai.prasert@example.com',
-            'type': 'individual',
-            'bank_account': {
-                'brand': 'bbl',
-                'number': '1234567890',
-                'name': 'SOMCHAI PRASERT'
-            }
-        }).then(function (recipient) {
-            //console.log(recipient.id)
-            return omise.transfers.create({ 'amount': '10000', 'recipient': recipient.id }
-            ).then(function (transfers) {
-                console.log(transfers)
-                return res.json({
-                    id: transfers.id
-                })
+        let body = req.body
+        let tokenUser = req.body.token
+        jwt.verify(tokenUser, key, async (err, authData) => {
+            if (err) { res.json({ message: err }) }
 
+            let uid = authData.user
+            pool.query("SELECT * FROM `pj_transaction` WHERE `user_ID` = ?", [uid], (error, resultT, field) => {
+                if (error) { res.json({ message: err }) }
+                else {
+                    //console.log(resultT.length)
+                    let countLoop = 0
+                    let moneyTrans = 0
+                    if (resultT.length != 0) {
+                        resultT.forEach(element => {
+                            if (element.state == "topup") {
+                                moneyTrans += element.money
+                            } else if (element.state == "withdraw") {
+                                moneyTrans -= element.money
+                            } else if (element.state == "buy") {
+                                moneyTrans -= element.money
+                            } else if (element.state == "sell") {
+                                moneyTrans += element.money
+                            }
+
+                            countLoop++
+                            if (countLoop == resultT.length) {
+                                pool.query("SELECT balance FROM `pj_user` WHERE `user_ID` = ?", [uid], async (error, resultBal, field) => {
+                                    if (error) { res.json({ message: error }) }
+                                    else {
+                                        if (resultBal[0].balance == moneyTrans) {
+                                            //
+                                            //
+                                            const recipient = await omise.recipients.create({
+                                                'name': body.name,
+                                                'email': body.email,
+                                                'type': 'individual',
+                                                'bank_account': {
+                                                    'brand': body.bankBand,
+                                                    'number': body.banknumber,
+                                                    'name': body.bankname
+                                                }
+                                            }).then(function (recipient) {
+
+                                                return omise.transfers.create({ 'amount': body.amount * 100, 'recipient': recipient.id }
+                                                ).then(function (transfers) {
+                                                    console.log(transfers)
+                                                    let statusT = "request"
+                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID) VALUES(?,?,?,?)", [transfers.id, statusT, body.amount, uid], (error, result, field) => {
+                                                        if (result.affectedRows == 1) {
+                                                            res.json({
+                                                                success: 1,
+                                                                message: "คุณได้ทำการส่งคำขอการถอนเงินสำเร็จ โปรดรอระบบทำการตรวจสอบข้อมูลของท่าน"
+                                                            })
+                                                        } else {
+                                                            res.json({
+                                                                success: 0,
+                                                                message: "มีบางอย่างผิดพลาด"
+                                                            })
+                                                        }
+                                                    })
+
+
+                                                })
+                                            })
+                                        } else {
+                                            res.json({ message: "failed", balance: resultBal[0].balance, monetTrans: moneyTrans })
+
+                                        }
+                                    }
+                                })
+                            }
+                        });
+                    } else {
+                        res.json({ status: "failed", message: "you don't have transaction!" })
+                    }
+                }
             })
+
+
         })
+
+
     } catch (error) {
 
     }
@@ -740,31 +802,41 @@ router.post("/webhooks", async (req, res) => {
 
         //const charge = {};
         if (key === 'transfer.pay' || key === 'transfer.send') {
-            
+
             if (data.paid == true && data.sent == true) {
 
-                console.log(data.id)
-                console.log(data.amount/100)
-               
-                // pool.query("select id from pj_wd_status where id = ?",[data.id],(err,result,field) =>{
+                // console.log(data.id)
+                // console.log(data.amount/100)
+                let status = "successful"
+                pool.query("UPDATE `pj_his_withdraw` SET `status` = ? where `w_token` = ?", [status, data.id])
+                pool.query("select  user_ID from pj_his_withdraw where w_token = ?", [data.id], (err, result1, field) => {
+                    
+                    axios.post(pathHttp + 'pjUsers/createTokenUser', {
+                        user_ID: result1[0].user_ID
+                    }).then(function(response){
+                        console.log(response.data.token);
+                        axios.post(pathHttp + 'pjUsers/updateMoney', {
+                            state: 'withdraw',
+                            money: data.amount / 100
+                        }, {
+                            headers: {
+                                'Authorization': 'Bearer ' + response.data.token
+                            }
+    
+                        })
+                    })
+                    
+                })
 
-                // })
 
 
-
-            } else{
-                console.log(data.id)
-                console.log(data.amount/100)
-               
+            } else {
+                // console.log(data.id)
+                // console.log(data.amount/100)
+                let status = "pending"
+                pool.query("UPDATE `pj_his_withdraw` SET `status` = ? where `w_token` = ?", [status, data.id])
 
             }
-
-
-
-            
-
-
-
         }
 
     } catch (error) {
@@ -824,7 +896,21 @@ router.post("/updateMoney", auth.verifyToken, (req, res) => {
     })
 })
 
-router.post("/withdraw", auth.verifyToken, (req, res) => {
+router.get("/my_his_withdraw", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        let uid = authData.user
+
+        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID` FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
+            if (results != "" || results != null) {
+                res.json(results)
+            } else {
+                res.json([])
+            }
+        })
+    })
+})
+
+router.post("/withdrawOld", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         if (err) { res.json({ message: err }) }
 
@@ -930,6 +1016,17 @@ router.get("/recommendUser", (req, res) => {
                 })
             })
         }
+    })
+})
+
+router.post("/createTokenUser", (req, res) => {
+    let uid = req.body.user_ID
+
+    jwt.sign({ user: uid }, key, (err, token) => {
+        return res.json({
+
+            token: token
+        })
     })
 })
 
