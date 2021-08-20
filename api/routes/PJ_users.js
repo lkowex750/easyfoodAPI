@@ -5,6 +5,8 @@ const passwordHash = require('password-hash')
 const mergeJSON = require('merge-json')
 const multer = require('multer')
 const jwt = require('jsonwebtoken')
+const admin = require('firebase-admin')
+const nodemailer = require('nodemailer')
 
 
 var auth = require('../../check-auth/auth')
@@ -810,10 +812,10 @@ router.post("/webhooks", async (req, res) => {
                 let status = "successful"
                 pool.query("UPDATE `pj_his_withdraw` SET `status` = ? where `w_token` = ?", [status, data.id])
                 pool.query("select  user_ID from pj_his_withdraw where w_token = ?", [data.id], (err, result1, field) => {
-                    
+
                     axios.post(pathHttp + 'pjUsers/createTokenUser', {
                         user_ID: result1[0].user_ID
-                    }).then(function(response){
+                    }).then(function (response) {
                         console.log(response.data.token);
                         axios.post(pathHttp + 'pjUsers/updateMoney', {
                             state: 'withdraw',
@@ -822,10 +824,10 @@ router.post("/webhooks", async (req, res) => {
                             headers: {
                                 'Authorization': 'Bearer ' + response.data.token
                             }
-    
+
                         })
                     })
-                    
+
                 })
 
 
@@ -1030,7 +1032,46 @@ router.post("/createTokenUser", (req, res) => {
     })
 })
 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    // secure: false,
+    // port: 25,
+    auth: {
+        user: "troj4n.52@gmail.com",
+        pass: "lxew8235qsl"
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
+})
 
+
+
+router.post("/reset_password", (req, res) => {
+    let body = req.body
+    var mailOption = {
+        from: 'EasyCook 🍔<no-reply@easycook.co.th>',
+        to: body.email,
+        subject: 'แจ้งเตือนการขอรีเซ็ตรหัสผ่านในแอปพลิชัน Easy Cook 🍔',
+
+        html: '<h1> Reset Password </h1><a href="https://easyfood.comsciproject.com">Click here for reset password</a>'
+    }
+
+    transporter.sendMail(mailOption, function (error, info) {
+        if (error) {
+            res.json({
+                success: 0,
+                message: error
+            })
+        } else {
+            //console.log('email sent: '+ info.response)
+            res.json({
+                success: 1,
+                message: "sent email successs"
+            })
+        }
+    })
+})
 
 
 
