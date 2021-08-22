@@ -602,10 +602,10 @@ router.get("/getPost/:rid", (req, res) => {
     pool.query("SELECT pj_recipe.rid,pj_recipe.user_ID,pj_recipe.recipe_name,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_recipe.image, pj_recipe.date, pj_recipe.price,pj_recipe.suitable_for, pj_recipe.take_time, pj_recipe.food_category, pj_recipe.description FROM `pj_recipe`,`pj_user` WHERE pj_user.user_ID = pj_recipe.user_ID and `rid` = ?", [rid], (error, resultRecipe, field) => {
         if (error) { res.json({ message: error }) }
         else {
-            pool.query("SELECT `ingredients_ID`, `ingredientName`, `amount`, `step` FROM `pj_ingredients` WHERE rid = ?", [rid], (error, resultIngred, field) => {
+            pool.query("SELECT `ingredients_ID`, `ingredientName`, `amount`, `step` FROM `pj_ingredients` WHERE rid = ? order by `step` ASC", [rid], (error, resultIngred, field) => {
                 if (error) { res.json({ message: error }) }
                 else {
-                    pool.query("SELECT `howto_ID`, `description`, `step`, `path_file`, `type_file` FROM `pj_howto` WHERE rid = ?", [rid], (error, resultHowto, field) => {
+                    pool.query("SELECT `howto_ID`, `description`, `step`, `path_file`, `type_file` FROM `pj_howto` WHERE rid = ? order by `step` ASC", [rid], (error, resultHowto, field) => {
                         if (error) { res.json({ message: error }) }
                         else {
                             pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [rid], (error, resultScore, field) => {

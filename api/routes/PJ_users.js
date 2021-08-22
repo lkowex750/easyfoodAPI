@@ -726,9 +726,9 @@ router.post("/withdraw", (req, res) => {
                                 moneyTrans += element.money
                             } else if (element.state == "withdraw") {
                                 moneyTrans -= element.money
-                            } else if (element.state == "buy") {
+                            } else if (element.state == "buy_recipe") {
                                 moneyTrans -= element.money
-                            } else if (element.state == "sell") {
+                            } else if (element.state == "sell_recipe") {
                                 moneyTrans += element.money
                             }
 
@@ -1045,7 +1045,7 @@ const transporter = nodemailer.createTransport({
     }
 })
 
-
+//https://accounts.google.com/DisplayUnlockCaptcha
 
 router.post("/reset_password", (req, res) => {
     let body = req.body
