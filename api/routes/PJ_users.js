@@ -266,7 +266,7 @@ router.post('/loginFacebook', (req, res) => {
 
         if (results[0]['checkID'] == 0) {
 
-            pool.query("INSERT INTO `pj_user` (`user_ID`, `facebookID`, `password`, `name_surname`, `alias_name`, `user_status`,`access_status`,`balance`, `profile_image`) VALUES (NULL, ?, 'facebook', ?, ?, 1, 1,0.00,?)", [body.userID, body.name_surname, body.alias_name, body.profile_image], (error, resultsIn, fields) => {
+            pool.query("INSERT INTO `pj_user` (`user_ID`, `email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`,`access_status`,`balance`, `profile_image`) VALUES (NULL, ?, ?,'facebook', ?, ?, 1, 1,0.00,?)", [body.email,body.userID, body.name_surname, body.alias_name, body.profile_image], (error, resultsIn, fields) => {
                 if (error) {
                     if (error.errno == 1062) {
                         return res.json({

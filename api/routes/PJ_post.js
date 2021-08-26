@@ -268,34 +268,45 @@ router.get("/mypost/:id", (req, res) => {
                     pool.query("select count(follow_ID) as countFollowing from pj_follow where my_ID = ?", [id], (error, resultCountFwing, field) => {
                         if (error) { res.json({ message: error }) }
                         else {
-                            pool.query("SELECT rid, recipe_name, image, date, price FROM pj_recipe  WHERE pj_recipe.user_ID = ? ORDER BY date DESC", [id], (error, resultRecipe, field) => {
+                            pool.query("SELECT rid, recipe_name, image, date, price FROM pj_recipe  WHERE pj_recipe.user_ID = ? ORDER BY rid DESC", [id], (error, resultRecipe, field) => {
                                 if (error) { res.json({ message: error }) }
                                 else {
 
                                     let countLoop = 0
-                                    let resultRecipeNew = []
-                                    let dataScore = []
+                                    let resultRecipeNew = new Array()
+                                    let dataScore =  new Array()
 
                                     if (resultRecipe.length != 0) {
+                                        
                                         resultRecipe.forEach(element => {
                                             pool.query("SELECT AVG(pj_score.score) as score FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAvg, field) => {
                                                 if (error) { res.json({ message: error }) }
                                                 else {
                                                     if (resultAvg[0].score != null) {
-                                                        dataScore.push(resultAvg[0].score)
+                                                        //dataScore.push(resultAvg[0].score)
+                                                        dataScore[countLoop] = resultAvg[0].score
                                                     } else {
-                                                        dataScore.push(0)
+                                                        //dataScore.push(0)
+                                                        dataScore[countLoop] = 0
                                                     }
                                                     resultRecipeNew.push({
-                                                        rid: resultRecipe[countLoop].rid,
-                                                        recipe_name: resultRecipe[countLoop].recipe_name,
-                                                        image: resultRecipe[countLoop].image,
-                                                        date: resultRecipe[countLoop].date,
-                                                        price: resultRecipe[countLoop].price,
+                                                        
+                                                        
+                                                        rid: element.rid,
+                                                        recipe_name: element.recipe_name,
+                                                        image: element.image,
+                                                        date: element.date,
+                                                        price: element.price,
                                                         score: dataScore[countLoop]
+                                                        
                                                     })
-
+                                                    resultRecipeNew.sort(function (a, b) {
+                                                        // Turn your strings into dates, and then subtract them
+                                                        // to get a value that is either negative, positive, or zero.
+                                                        return b.rid - a.rid;
+                                                    });
                                                     countLoop++
+                                                    
                                                     if (countLoop == resultRecipe.length) {
                                                         let newData = {
                                                             user_ID: result[0].user_ID,
@@ -313,6 +324,7 @@ router.get("/mypost/:id", (req, res) => {
                                                     }
                                                 }
                                             })
+                                            
                                         });
 
                                     } else {
@@ -1274,7 +1286,11 @@ router.get("/getAllReport", auth.verifyToken, (req, res) => {
     })
 })
 
+//recommend by score
+//SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.counts,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID ORDER BY pj_avg_score.avg_score DESC,pj_avg_score.counts
 
+//free recipe
+//SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID AND pj_recipe.price = 0 ORDER BY pj_avg_score.avg_score DESC,pj_recipe.price
 
 
 
