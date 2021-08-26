@@ -381,7 +381,7 @@ router.post("/editRecipePost", auth.verifyToken, (req, res) => {
         let body = req.body
         let uid = authData.user
 
-        pool.query("update pj_recipe set recipe_name = ? ,image = ? , date = now() ,price = ? where user_ID = ? and rid = ?", [body.recipe_name, body.image, body.price, uid, body.rid], (err, result, field) => {
+        pool.query("update pj_recipe set recipe_name = ? ,image = ? , date = now() ,price = ?,suitable_for = ?,take_time = ?,food_category = ?,description = ? where user_ID = ? and rid = ?", [body.recipe_name, body.image, body.price,body.suitable_for,body.take_time,body.food_category,body.description, uid, body.rid], (err, result, field) => {
             if (err) {
                 res.json({ message: err })
             }
@@ -1292,9 +1292,35 @@ router.get("/getAllReport", auth.verifyToken, (req, res) => {
 //free recipe
 //SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID AND pj_recipe.price = 0 ORDER BY pj_avg_score.avg_score DESC,pj_recipe.price
 
+router.get("/popular_recipe",(req,res) =>{
+    pool.query("SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.counts,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID ORDER BY pj_avg_score.avg_score DESC,pj_avg_score.counts",(err,results,field) =>{
+        if(results != ""){
+            res.json(results)
+        }else{
+            res.json([])
+        }
+    })
+})
 
+router.get("/popular_recipe_free",(req,res) =>{
+    pool.query("SELECT * FROM `pj_recipe_free`",(err,results,field) =>{
+        if(results != ""){
+            res.json(results)
+        }else{
+            res.json([])
+        }
+    })
+})
 
-
+router.get("/popular_recipe_price",(req,res) =>{
+    pool.query("SELECT * FROM `pj_recipe_price`",(err,results,field) =>{
+        if(results != ""){
+            res.json(results)
+        }else{
+            res.json([])
+        }
+    })
+})
 
 
 
