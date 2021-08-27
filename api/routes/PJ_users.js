@@ -266,7 +266,7 @@ router.post('/loginFacebook', (req, res) => {
 
         if (results[0]['checkID'] == 0) {
 
-            pool.query("INSERT INTO `pj_user` (`user_ID`, `email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`,`access_status`,`balance`, `profile_image`) VALUES (NULL, ?, ?,'facebook', ?, ?, 1, 1,0.00,?)", [body.email,body.userID, body.name_surname, body.alias_name, body.profile_image], (error, resultsIn, fields) => {
+            pool.query("INSERT INTO `pj_user` (`user_ID`, `email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`,`access_status`,`balance`, `profile_image`) VALUES (NULL, ?, ?,'facebook', ?, ?, 1, 1,0.00,?)", [body.email, body.userID, body.name_surname, body.alias_name, body.profile_image], (error, resultsIn, fields) => {
                 if (error) {
                     if (error.errno == 1062) {
                         return res.json({
@@ -671,6 +671,18 @@ router.post("/topup", async (req, res) => {
                             .then(function (response) {
                                 // handle success
                                 console.log(response.data.balance);
+
+                                //
+                                axios.post(pathHttp + 'pjUsers/insert_his_topup', {
+                                    t_token: charge.id,
+                                    status: charge.status,
+                                    amount: charge.amount/100,
+                                }, {
+                                    headers: {
+                                        'Authorization': 'Bearer ' + tokenUser
+                                    }
+                                })
+
                                 res.json({
                                     success: 1,
                                     balance: response.data.balance
@@ -700,6 +712,34 @@ router.post("/topup", async (req, res) => {
 
 
 
+})
+
+router.post("/insert_his_topup", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (error, authData) => {
+        if(error){
+            console.log("failed!!")
+        }
+        let uid = authData.user
+        let body = req.body
+        // console.log(uid +".......................")
+        // console.log(body.t_token +".......................")
+        // console.log(body.status +".......................")
+        // console.log(body.amount +".......................")
+        
+        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`) VALUES (?, ?, ?, ?)", [body.t_token, body.status, body.amount, uid], (err, result, field) => {
+            console.log(result)
+            console.log(err)
+            if (result.affectedRows == 1) {
+                res.json({
+                    success: 1
+                })
+            } else {
+                res.json({
+                    success: 0
+                })
+            }
+        })
+    })
 })
 // curl https://api.omise.co/transfers/trsf_test_5owfia4pppx2la82v4c/mark_as_sent \
 //   -X POST \
@@ -803,7 +843,8 @@ router.post("/webhooks", async (req, res) => {
         const { data, key } = req.body
 
         //const charge = {};
-        if (key === 'transfer.pay' || key === 'transfer.send') {
+        console.log(key)
+        if (key === 'transfer.pay' || key === 'transfer.send' || key === 'transfer.destroy') {
 
             if (data.paid == true && data.sent == true) {
 
@@ -832,12 +873,60 @@ router.post("/webhooks", async (req, res) => {
 
 
 
-            } else {
+            }
+
+            else {
                 // console.log(data.id)
                 // console.log(data.amount/100)
                 let status = "pending"
                 pool.query("UPDATE `pj_his_withdraw` SET `status` = ? where `w_token` = ?", [status, data.id])
 
+            }
+
+            if (data.deleted == true) {
+                let status = "failed"
+                pool.query("UPDATE `pj_his_withdraw` SET `status` = ? where `w_token` = ?", [status, data.id])
+            }
+        }
+        if (key === 'charge.create') {
+            //console.log(data)
+            if (data.source.type == 'promptpay') {
+
+            }
+        }
+
+        if (key === 'charge.complete') {
+            //if(data.source.type)
+            // console.log(data.status)
+            //console.log(data.source.type)
+            if (data.source.type == 'promptpay') {
+                if (data.status == 'successful') {
+                    let status = "successful"
+                    //console.log(status)
+                    pool.query("UPDATE `pj_his_topup` SET `status` = ? where `t_token` = ?", [status, data.source.id])
+                    pool.query("select user_ID from pj_his_topup where t_token = ?",[data.source.id],(err,result2,field) =>{
+                        
+                        axios.post(pathHttp + 'pjUsers/createTokenUser', {
+                            user_ID: result2[0].user_ID
+                        }).then(function (response) {
+                            console.log(response.data.token);
+                            axios.post(pathHttp + 'pjUsers/updateMoney', {
+                                state: 'topup',
+                                money: data.amount / 100
+                            }, {
+                                headers: {
+                                    'Authorization': 'Bearer ' + response.data.token
+                                }
+    
+                            })
+                        })
+                    })
+                    //axios
+                } else if (data.status == 'failed') {
+                    let status = "failed"
+                    //console.log(status)
+                    pool.query("UPDATE `pj_his_topup` SET `status` = ? where `t_token` = ?", [status, data.source.id])
+                }
             }
         }
 
@@ -1071,6 +1160,57 @@ router.post("/reset_password", (req, res) => {
             })
         }
     })
+})
+
+router.post("/topup_qr", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        let uid = authData.user
+        
+        var amount = req.body.amount*100;
+        var currency = 'thb';
+        var source = {
+            'type': 'promptpay',
+            'amount': amount,
+            'currency': currency,
+        };
+
+        omise.sources.create(source).then(function (resSource) {
+            return omise.charges.create({
+                'amount': amount,
+                'source': resSource.id,
+                'currency': currency,
+                'return_uri': '',
+            });
+        }).then(function (charge) {
+            console.log("Charge !!")
+            
+
+            axios.post(pathHttp + 'pjUsers/insert_his_topup', {
+                                    t_token: charge.source.id,
+                                    status: charge.status,
+                                    amount: charge.amount/100,
+                                }, {
+                                    headers: {
+                                        'Authorization': 'Bearer ' + req.token
+                                    }
+                                }).then(function(response) {
+                                    // console.log("5555555555555")
+                                    // console.log(charge.source.scannable_code);
+                                    res.json({
+                                        filename: charge.source.scannable_code.image.filename,
+                                        qr__code: charge.source.scannable_code.image.download_uri
+                                        
+                                    })
+                                })
+            
+                                
+
+            //console.log(charge);
+        }).catch(function (err) {
+            console.log(err);
+        });
+    })
+
 })
 
 
