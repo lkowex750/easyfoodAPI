@@ -275,19 +275,21 @@ router.get("/mypost/:id", (req, res) => {
                                     let countLoop = 0
                                     let resultRecipeNew = new Array()
                                     let dataScore =  new Array()
-
+                                    let count = []
                                     if (resultRecipe.length != 0) {
                                         
                                         resultRecipe.forEach(element => {
-                                            pool.query("SELECT AVG(pj_score.score) as score FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAvg, field) => {
+                                            pool.query("SELECT AVG(pj_score.score) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAvg, field) => {
                                                 if (error) { res.json({ message: error }) }
                                                 else {
                                                     if (resultAvg[0].score != null) {
                                                         //dataScore.push(resultAvg[0].score)
                                                         dataScore[countLoop] = resultAvg[0].score
+                                                        count[countLoop] = resultAvg[0].count
                                                     } else {
                                                         //dataScore.push(0)
                                                         dataScore[countLoop] = 0
+                                                        count[countLoop] = 0
                                                     }
                                                     resultRecipeNew.push({
                                                         
@@ -297,7 +299,8 @@ router.get("/mypost/:id", (req, res) => {
                                                         image: element.image,
                                                         date: element.date,
                                                         price: element.price,
-                                                        score: dataScore[countLoop]
+                                                        score: dataScore[countLoop],
+                                                        count: count[countLoop]
                                                         
                                                     })
                                                     resultRecipeNew.sort(function (a, b) {
@@ -595,7 +598,46 @@ router.get("/newfeeds", auth.verifyToken, (req, res) => {
 
 router.get("/newfeedsglobal", (req, res) => {
     pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID  ORDER BY pj_recipe.date DESC", (error, result, field) => {
-        res.json(result)
+        if(result != null || result != ""){
+            let newData = []
+            let dataScore = []
+            let count = []
+            let countLoop = 0
+            result.forEach(element =>{
+                pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resultAVG,field) =>{
+                    if (resultAVG[0].score != null) {
+                        dataScore.push(resultAVG[0].score)
+                        count.push(resultAVG[0].count)
+                    } else {
+                        dataScore.push(0)
+                        count.push(0)
+                    }
+
+                    newData.push({
+                        user_ID: element.user_ID,
+                        name_surname: element.name_surname,
+                        alias_name: element.alias_name,
+                        user_status: element.user_status,
+                        access_status: element.access_status,
+                        profile_image: element.profile_image,
+                        rid: element.rid,
+                        recipe_name: element.recipe_name,
+                        image: element.image,
+                        date: element.date,
+                        price: element.price,
+                        score: dataScore[countLoop],
+                        count: count[countLoop]
+
+                    })
+                    countLoop ++
+
+                    if(countLoop == result.length){
+                        res.json(newData)
+                    }
+                })
+            })
+        }
+        //res.json(result)
     })
 })
 
@@ -620,7 +662,7 @@ router.get("/getPost/:rid", (req, res) => {
                     pool.query("SELECT `howto_ID`, `description`, `step`, `path_file`, `type_file` FROM `pj_howto` WHERE rid = ? order by `step` ASC", [rid], (error, resultHowto, field) => {
                         if (error) { res.json({ message: error }) }
                         else {
-                            pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [rid], (error, resultScore, field) => {
+                            pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?", [rid], (error, resultScore, field) => {
                                 if (error) { res.json({ message: error }) }
                                 else {
                                     pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC", [rid], (error, resultsComm, filed) => {
@@ -643,6 +685,7 @@ router.get("/getPost/:rid", (req, res) => {
                                                 ingredient: resultIngred,
                                                 howto: resultHowto,
                                                 score: resultScore[0].score,
+                                                count: resultScore[0].count,
                                                 comment: resultsComm
                                             }
 
@@ -743,6 +786,7 @@ router.get("/searchRecipeName/:name", (req, res) => {
         //console.log(result[0].rid)
         let countLoop = 0
         let data = []
+        let count = []
         let newData = []
         if (result.length == 0) {
             res.json({
@@ -750,15 +794,17 @@ router.get("/searchRecipeName/:name", (req, res) => {
             })
         }
         result.forEach(element => {
-            pool.query("SELECT AVG(`score`) as AVGscore FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resutlsScore, field) => {
+            pool.query("SELECT AVG(`score`) as AVGscore, COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resutlsScore, field) => {
 
                 if (error) { res.json({ message: err }) }
                 else {
 
                     if (resutlsScore[0].AVGscore != null) {
                         data.push(resutlsScore[0].AVGscore)
+                        count.push(resutlsScore[0].count)
                     } else {
                         data.push(0)
+                        count.push(0)
                     }
                     //alias_name,pj_user.name_surname,pj_user.profile_image
                     newData.push({
@@ -770,6 +816,7 @@ router.get("/searchRecipeName/:name", (req, res) => {
                         name_surname: result[countLoop].name_surname,
                         profile_image: result[countLoop].profile_image,
                         score: data[countLoop],
+                        count: count[countLoop],
                         price: result[countLoop].price
                     })
                     //console.log(data)
@@ -845,16 +892,19 @@ router.get("/searchWithCategory/:name", (req, res) => {
                 res.json({ message: "ไม่พบหมวดหมู่ " + name + " ในการค้นหานี้ " })
             } else {
                 let dataScore = []
+                let count = []
                 let countLoop = 0
                 let dataRecipe = []
                 results.forEach(element => {
-                    pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, score1, filed) => {
+                    pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, score1, filed) => {
                         if (error) { res.json({ message: error }) }
                         else {
                             if (score1[0].score != null) {
                                 dataScore.push(score1[0].score)
+                                count.push(score1[0].count)
                             } else {
                                 dataScore.push(0)
+                                count.push(0)
                             }
 
                             dataRecipe.push({
@@ -868,7 +918,8 @@ router.get("/searchWithCategory/:name", (req, res) => {
                                 description: results[countLoop].description,
                                 image: results[countLoop].image,
                                 price: results[countLoop].price,
-                                score: dataScore[countLoop]
+                                score: dataScore[countLoop],
+                                count: count[countLoop]
                             })
                             countLoop++
                             if (countLoop == results.length) {
@@ -1062,14 +1113,17 @@ router.get("/recommendRecipe", (req, res) => {
             arr_rid.push(element.rid)
         })
         let newData = new Array()
+        let count = []
         let countLoop = 0
         let dataRecipe = new Array()
         arr_rid.forEach(element => {
-            pool.query("SELECT AVG(`score`) as score FROM `pj_score` WHERE `recipe_ID` = ? ", [element], (error, resultAvg, field) => {
+            pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ? ", [element], (error, resultAvg, field) => {
                 if (resultAvg[0].score != null) {
                     newData.push(resultAvg[0].score)
+                    count.push(resultAvg[0].count)
                 } else {
                     newData.push(0)
+                    count.push(0)
                 }
 
                 dataRecipe.push({
@@ -1082,7 +1136,8 @@ router.get("/recommendRecipe", (req, res) => {
                     food_category: result[countLoop].food_category,
                     image: result[countLoop].image,
                     price: result[countLoop].price,
-                    score: newData[countLoop]
+                    score: newData[countLoop],
+                    count: count[countLoop]
                 })
                 countLoop++
 
