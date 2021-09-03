@@ -656,6 +656,7 @@ router.post("/topup", async (req, res) => {
                     })
                 }).then(function (charge) {
                     console.log(charge.status)
+                    console.log(charge.card.brand)
                     if (charge.status == "successful") {
 
 
@@ -677,6 +678,7 @@ router.post("/topup", async (req, res) => {
                                     t_token: charge.id,
                                     status: charge.status,
                                     amount: charge.amount/100,
+                                    brand: charge.card.brand
                                 }, {
                                     headers: {
                                         'Authorization': 'Bearer ' + tokenUser
@@ -726,7 +728,7 @@ router.post("/insert_his_topup", auth.verifyToken, (req, res) => {
         // console.log(body.status +".......................")
         // console.log(body.amount +".......................")
         
-        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`) VALUES (?, ?, ?, ?)", [body.t_token, body.status, body.amount, uid], (err, result, field) => {
+        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`,`brand`) VALUES (?, ?, ?, ?,?)", [body.t_token, body.status, body.amount, uid,body.brand], (err, result, field) => {
             console.log(result)
             console.log(err)
             if (result.affectedRows == 1) {
@@ -793,9 +795,15 @@ router.post("/withdraw", (req, res) => {
 
                                                 return omise.transfers.create({ 'amount': body.amount * 100, 'recipient': recipient.id }
                                                 ).then(function (transfers) {
-                                                    console.log(transfers)
+
+                                                    console.log(transfers.bank_account.brand)
+                                                    console.log(transfers.bank_account.name)
+                                                    console.log("******"+transfers.bank_account.last_digits)
+                                                    let brand = transfers.bank_account.brand
+                                                    let bname = transfers.bank_account.name
+                                                    let last_digits = "******"+transfers.bank_account.last_digits
                                                     let statusT = "request"
-                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID) VALUES(?,?,?,?)", [transfers.id, statusT, body.amount, uid], (error, result, field) => {
+                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID,brand,name,last_digits) VALUES(?,?,?,?,?,?,?)", [transfers.id, statusT, body.amount, uid,brand,bname,last_digits], (error, result, field) => {
                                                         if (result.affectedRows == 1) {
                                                             res.json({
                                                                 success: 1,
@@ -821,7 +829,7 @@ router.post("/withdraw", (req, res) => {
                             }
                         });
                     } else {
-                        res.json({ status: "failed", message: "you don't have transaction!" })
+                        res.json({ status: "failed", message: "you don't have transaction!" ,data:resultT.length})
                     }
                 }
             })
@@ -991,7 +999,7 @@ router.get("/my_his_withdraw", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
 
-        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID` FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
+        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID`, `brand`, `name`, `last_digits` FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
             if (results != "" || results != null) {
                 res.json(results)
             } else {
@@ -1000,6 +1008,21 @@ router.get("/my_his_withdraw", auth.verifyToken, (req, res) => {
         })
     })
 })
+
+router.get("/my_his_topup", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        let uid = authData.user
+
+        pool.query("SELECT `tid`, `t_token`, `status`, `amount`, `user_ID`,`brand` FROM `pj_his_topup` WHERE `user_ID` = ? ORDER BY `tid` DESC", [uid], (err, results, field) => {
+            if (results != "" || results != null) {
+                res.json(results)
+            } else {
+                res.json([])
+            }
+        })
+    })
+})
+
 
 router.post("/withdrawOld", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
@@ -1189,6 +1212,7 @@ router.post("/topup_qr", auth.verifyToken, (req, res) => {
                                     t_token: charge.source.id,
                                     status: charge.status,
                                     amount: charge.amount/100,
+                                    brand: "Promptpay"
                                 }, {
                                     headers: {
                                         'Authorization': 'Bearer ' + req.token
