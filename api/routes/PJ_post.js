@@ -344,6 +344,7 @@ router.get("/mypost/:id", (req, res) => {
                                             alias_name: result[0].alias_name,
                                             user_status: result[0].user_status,
                                             profile_image: result[0].profile_image,
+                                            wallpaper: result[0].wallpaper,
                                             countPost: resultRecipeNew.length,
                                             countFollower: resultCountFwer[0].countFollower,
                                             countFollowing: resultCountFwing[0].countFollowing,

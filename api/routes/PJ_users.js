@@ -116,7 +116,7 @@ router.post("/signupNewStep1", (req, res) => {
     let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
     let alias = "ท่านสมาชิก"
 
-    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`,`wallpaper`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?,'default.jpg')", [body.email, body.password, body.email, alias, path], (err, results, fields) => {
+    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`,`wallpaper`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?,'assets/wallpapers/default.jpg')", [body.email, body.password, body.email, alias, path], (err, results, fields) => {
         if (err) {
             if (err.errno == 1062) {
                 return res.json({
