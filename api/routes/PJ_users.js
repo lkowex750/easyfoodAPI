@@ -23,6 +23,15 @@ const storage = multer.diskStorage({
     }
 })
 
+const storageWallpaper = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploadWallpaper/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, new Date().toISOString().replace(/:|\./g, '') + '-' + file.originalname);
+    }
+})
+
 const fileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
         cb(null, true)
@@ -30,6 +39,11 @@ const fileFilter = (req, file, cb) => {
         cb(null, false)
     }
 }
+
+
+const uploadWallpaper = multer({
+    storage: storageWallpaper
+})
 
 const upload = multer({
     storage: storage,
@@ -39,7 +53,17 @@ const upload = multer({
     fileFilter: fileFilter
 })
 
-
+router.post("/uploadWallpaperFile", uploadWallpaper.single("file"), (req, res) => {
+    console.log(req.file)
+    let type = req.file.mimetype
+    let typeArr = type.split('/')
+    type = typeArr[0]
+    let path = pathHttp + req.file.path
+    res.json({
+        path: path,
+        type: type
+    })
+})
 
 router.post("/signup", (req, res) => {
     let body = req.body
@@ -92,7 +116,7 @@ router.post("/signupNewStep1", (req, res) => {
     let path = "http://apifood.comsciproject.com/uploadProfile/img_avatar.png"
     let alias = "ท่านสมาชิก"
 
-    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?)", [body.email, body.password, body.email, alias, path], (err, results, fields) => {
+    pool.query("INSERT INTO `pj_user` (`email`,`facebookID`, `password`, `name_surname`, `alias_name`, `user_status`, `access_status`, `balance`, `profile_image`,`wallpaper`) VALUES (?,NULL, ?, ?, ?, 1, 1, 0.00, ?,'default.jpg')", [body.email, body.password, body.email, alias, path], (err, results, fields) => {
         if (err) {
             if (err.errno == 1062) {
                 return res.json({
@@ -244,7 +268,7 @@ router.get("/myAccount", auth.verifyToken, (req, res) => {
         }
         let id = authData.user
 
-        pool.query("SELECT `user_ID`,`email`,`facebookID`,`name_surname`,`alias_name`,`user_status`,`access_status`,`balance`,`profile_image` FROM `pj_user` WHERE `user_ID` =? ", [id], (error, results, fields) => {
+        pool.query("SELECT `user_ID`,`email`,`facebookID`,`name_surname`,`alias_name`,`user_status`,`access_status`,`balance`,`profile_image`,`wallpaper` FROM `pj_user` WHERE `user_ID` =? ", [id], (error, results, fields) => {
             res.json({
                 success: 1,
                 data: results
@@ -1235,6 +1259,23 @@ router.post("/topup_qr", auth.verifyToken, (req, res) => {
         });
     })
 
+})
+
+router.post("/updateWallpaper",auth.verifyToken,(req,res) =>{
+    jwt.verify(req.token,key,(err,authData) =>{
+        let uid = authData.user
+
+        let body = req.body
+
+        pool.query("update pj_user  set wallpaper = ? where user_ID = ?",[body.wallpaperName,uid],(error,result,filed) =>{
+            if (result.affectedRows == 1) {
+                res.json({
+                    success: 1
+                    
+                })
+            }
+        })
+    })
 })
 
 

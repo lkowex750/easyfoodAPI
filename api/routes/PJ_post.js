@@ -40,6 +40,8 @@ const storageRecipe = multer.diskStorage({
     }
 })
 
+
+
 const fileFilter = (req, file, cb) => {
     if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg' || file.mimetype === 'video/mkv') {
         //console.log("video")
@@ -67,6 +69,8 @@ const uploadRecipe = multer({
     storage: storageRecipe
 })
 
+
+
 //'video/x-matroska'
 //'video/mp4'
 
@@ -81,6 +85,8 @@ router.post("/uploadHowtoFile", uploadHowto.single("file"), (req, res) => {
         type: type
     })
 })
+
+
 
 
 //เพิ่มreport image
@@ -317,6 +323,7 @@ router.get("/mypost/:id", (req, res) => {
                                                             alias_name: result[0].alias_name,
                                                             user_status: result[0].user_status,
                                                             profile_image: result[0].profile_image,
+                                                            wallpaper: result[0].wallpaper,
                                                             countPost: resultRecipeNew.length,
                                                             countFollower: resultCountFwer[0].countFollower,
                                                             countFollowing: resultCountFwing[0].countFollowing,
@@ -597,13 +604,13 @@ router.get("/newfeeds", auth.verifyToken, (req, res) => {
 })
 
 router.get("/newfeedsglobal", (req, res) => {
-    pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID  ORDER BY pj_recipe.date DESC", (error, result, field) => {
+    pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID  ORDER BY pj_recipe.rid DESC", (error, result, field) => {
         if(result != null || result != ""){
             let newData = []
             let dataScore = []
             let count = []
             let countLoop = 0
-            result.forEach(element =>{
+            result.forEach((element) =>{
                 pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resultAVG,field) =>{
                     if (resultAVG[0].score != null) {
                         dataScore.push(resultAVG[0].score)
@@ -632,6 +639,11 @@ router.get("/newfeedsglobal", (req, res) => {
                     countLoop ++
 
                     if(countLoop == result.length){
+                        newData.sort(function (a, b) {
+                            // Turn your strings into dates, and then subtract them
+                            // to get a value that is either negative, positive, or zero.
+                            return new Date(b.date) - new Date(a.date);
+                        });
                         res.json(newData)
                     }
                 })
@@ -1017,7 +1029,7 @@ router.get("/mybuy", auth.verifyToken, (req, res) => {
         if (err) { res.json({ message: err }) }
         let uid = authData.user
 
-        pool.query("select pj_buy.bid,pj_buy.recipe_ID,pj_buy.datetime,pj_buy.price,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.food_category,pj_recipe.description from pj_buy,pj_recipe where pj_recipe.rid = pj_buy.recipe_ID and pj_buy.user_ID = ?", [uid], (error, result, field) => {
+        pool.query("select pj_buy.bid,pj_buy.recipe_ID,pj_buy.datetime,pj_buy.price,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.food_category,pj_recipe.description,pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image  from pj_buy,pj_recipe ,pj_user where pj_recipe.rid = pj_buy.recipe_ID and pj_recipe.user_ID = pj_user.user_ID AND pj_buy.user_ID = ?", [uid], (error, result, field) => {
             res.json(result)
         })
     })
@@ -1106,7 +1118,7 @@ router.post("/deleteRecipe", auth.verifyToken, (req, res) => {
 router.get("/recommendRecipe", (req, res) => {
     //SELECT pj_recipe.rid ,pj_user.user_ID, pj_user.name_surname FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 5 
 
-    pool.query("SELECT pj_recipe.rid ,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.price,pj_recipe.food_category,pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 5 ", (error, result, field) => {
+    pool.query("SELECT pj_recipe.rid ,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.price,pj_recipe.food_category,pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 20 ", (error, result, field) => {
         let arr_rid = new Array()
 
         result.forEach(element => {

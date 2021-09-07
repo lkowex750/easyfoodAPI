@@ -32,6 +32,7 @@ app.use('/uploadProfilePj',express.static(__dirname + '/uploadProfilePj'))
 app.use('/uploadHowto',express.static(__dirname + '/uploadHowto'))
 app.use('/uploadIngredients_file',express.static(__dirname + '/uploadIngredients_file'))
 app.use('/uploadPost',express.static(__dirname + '/uploadPost'))
+app.use('/uploadWallpaper',express.static(__dirname + '/uploadWallpaper'))
 
 app.use(function(req, res, next) {
 
