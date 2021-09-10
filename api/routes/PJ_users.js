@@ -752,7 +752,7 @@ router.post("/insert_his_topup", auth.verifyToken, (req, res) => {
         // console.log(body.status +".......................")
         // console.log(body.amount +".......................")
         
-        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`,`brand`) VALUES (?, ?, ?, ?,?)", [body.t_token, body.status, body.amount, uid,body.brand], (err, result, field) => {
+        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`,`brand`,`datetime`) VALUES (?, ?, ?, ?,?,now())", [body.t_token, body.status, body.amount, uid,body.brand], (err, result, field) => {
             console.log(result)
             console.log(err)
             if (result.affectedRows == 1) {
@@ -827,7 +827,7 @@ router.post("/withdraw", (req, res) => {
                                                     let bname = transfers.bank_account.name
                                                     let last_digits = "******"+transfers.bank_account.last_digits
                                                     let statusT = "request"
-                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID,brand,name,last_digits) VALUES(?,?,?,?,?,?,?)", [transfers.id, statusT, body.amount, uid,brand,bname,last_digits], (error, result, field) => {
+                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID,brand,name,last_digits,datetime) VALUES(?,?,?,?,?,?,?,now())", [transfers.id, statusT, body.amount, uid,brand,bname,last_digits], (error, result, field) => {
                                                         if (result.affectedRows == 1) {
                                                             res.json({
                                                                 success: 1,
@@ -1023,7 +1023,7 @@ router.get("/my_his_withdraw", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
 
-        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID`, `brand`, `name`, `last_digits` FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
+        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID`, `brand`, `name`, `last_digits`,`datetime` FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
             if (results != "" || results != null) {
                 res.json(results)
             } else {
@@ -1037,7 +1037,7 @@ router.get("/my_his_topup", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
 
-        pool.query("SELECT `tid`, `t_token`, `status`, `amount`, `user_ID`,`brand` FROM `pj_his_topup` WHERE `user_ID` = ? ORDER BY `tid` DESC", [uid], (err, results, field) => {
+        pool.query("SELECT `tid`, `t_token`, `status`, `amount`, `user_ID`,`brand`,`datetime` FROM `pj_his_topup` WHERE `user_ID` = ? ORDER BY `tid` DESC", [uid], (err, results, field) => {
             if (results != "" || results != null) {
                 res.json(results)
             } else {
