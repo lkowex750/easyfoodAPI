@@ -289,8 +289,9 @@ router.get("/mypost/:id", (req, res) => {
                                                 if (error) { res.json({ message: error }) }
                                                 else {
                                                     if (resultAvg[0].score != null) {
+                                                        let round = Math.round(resultAvg[0].score *100) / 100
                                                         //dataScore.push(resultAvg[0].score)
-                                                        dataScore[countLoop] = resultAvg[0].score
+                                                        dataScore[countLoop] = round
                                                         count[countLoop] = resultAvg[0].count
                                                     } else {
                                                         //dataScore.push(0)
@@ -433,15 +434,28 @@ router.post("/editHowto", auth.verifyToken, (req, res) => {
 
             if (body.howto_ID[i] != null) {
                 //console.log("update")
-                pool.query("UPDATE `pj_howto` SET `description`=?,`step`=?,`path_file`=?,`type_file`=? where `howto_ID` = ? AND `rid` = ?", [body.description[i], body.step[i], body.path_file[i], body.type_file[i], body.howto_ID[i], body.recipe_ID], (error, result, field) => {
-                    if (err) {
-                        res.json({
-                            message: err
-                        })
-                    }
-                    //console.log(result)
-
-                })
+                if(body.status[i] == "update"){
+                    pool.query("UPDATE `pj_howto` SET `description`=?,`step`=?,`path_file`=?,`type_file`=? where `howto_ID` = ? AND `rid` = ?", [body.description[i], body.step[i], body.path_file[i], body.type_file[i], body.howto_ID[i], body.recipe_ID], (error, result, field) => {
+                        if (err) {
+                            res.json({
+                                message: err
+                            })
+                        }
+                        //console.log(result)
+    
+                    })
+                }else if(body.status[i] == "delete"){
+                    pool.query("DELETE FROM `pj_howto` WHERE `howto_ID` = ? and `rid` = ?", [body.howto_ID[i], body.recipe_ID], (error, result, field) => {
+                        if (err) {
+                            res.json({
+                                message: err
+                            })
+                        }
+                        //console.log(result)
+    
+                    })
+                }
+                
                 loopCount += 1
 
             } else {
@@ -478,10 +492,18 @@ router.post("/editIngredient", auth.verifyToken, (req, res) => {
         let countLoop = 0
         for (var i = 0; i < body.step.length; i++) {
             if (body.ingredients_ID[i] != null) {
-                pool.query("UPDATE `pj_ingredients` SET `ingredientName`=?,`amount`=?,`step`=? WHERE `ingredients_ID` = ? AND `rid` = ?", [body.ingredientName[i], body.amount[i], body.step[i], body.ingredients_ID[i], body.recipe_ID], (error, result, field) => {
-                    if (error) { res.json({ message: error }) }
-
-                })
+                if(body.status[i] == "update"){
+                    pool.query("UPDATE `pj_ingredients` SET `ingredientName`=?,`amount`=?,`step`=? WHERE `ingredients_ID` = ? AND `rid` = ?", [body.ingredientName[i], body.amount[i], body.step[i], body.ingredients_ID[i], body.recipe_ID], (error, result, field) => {
+                        if (error) { res.json({ message: error }) }
+    
+                    })
+                }else if(body.status[i] == "delete"){
+                    pool.query("DELETE FROM `pj_ingredients` WHERE `ingredients_ID` = ? and `rid` = ?", [body.ingredients_ID[i], body.recipe_ID], (error, result, field) => {
+                        if (error) { res.json({ message: error }) }
+    
+                    })
+                }
+                
                 countLoop += 1
             } else {
 
@@ -614,7 +636,8 @@ router.get("/newfeedsglobal", (req, res) => {
             result.forEach((element) =>{
                 pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resultAVG,field) =>{
                     if (resultAVG[0].score != null) {
-                        dataScore.push(resultAVG[0].score)
+                        let round = Math.round(resultAVG[0].score *100) / 100
+                        dataScore.push(round)
                         count.push(resultAVG[0].count)
                     } else {
                         dataScore.push(0)
@@ -681,6 +704,7 @@ router.get("/getPost/:rid", (req, res) => {
                                     pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC", [rid], (error, resultsComm, filed) => {
                                         if (error) { res.json({ message: error }) }
                                         else {
+                                            let round = Math.round(resultScore[0].score *100) / 100
                                             let newData = {
                                                 rid: resultRecipe[0].rid,
                                                 user_ID: resultRecipe[0].user_ID,
@@ -697,7 +721,7 @@ router.get("/getPost/:rid", (req, res) => {
                                                 price: resultRecipe[0].price,
                                                 ingredient: resultIngred,
                                                 howto: resultHowto,
-                                                score: resultScore[0].score,
+                                                score: round,
                                                 count: resultScore[0].count,
                                                 comment: resultsComm
                                             }
