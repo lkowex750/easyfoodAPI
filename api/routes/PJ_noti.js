@@ -31,28 +31,32 @@ router.post('/api_notification', (req, res) => {
     // let ace = "https://apifood.comsciproject.com/uploadProfilePj\\2021-08-08T054800988Z-aceee.png"
     // let food = "https://apifood.comsciproject.com/uploadProfilePj\\2021-08-07T175534781Z-889693.png"
     const registrationToken = token;
+    console.log(registrationToken.length)
+    //const registrationToken = "cZgMfQ48Sg63XK8NIFpZmZ:APA91bFwGfulwCH9LMFNezndrx8D9eYfyUTkJxxdfDgeygRqaC7ttXITsN01GxlfTBQDa_o6DNRFCxd4W2iRc2K8QnBUbstPXWS6FwQctICfqGo1N8fAiprnvSp2gJFxTDeWZ0lgvE3E"
 
-    const message = {
-        
-        notification: {
-            body: body,
-            title: title
-            //image: ace
-            
-        },
-        android: {
-            priority: "high",
-            notification: {
-                click_action: "OPEN_ACTIVITY_1"
-            }
-          },
-        
-        token: registrationToken
-       
-
-    };
+    
 
     if(state =="specific"){
+        const message = {
+        
+            notification: {
+                body: body,
+                title: title
+                //image: ace
+                
+            }
+            ,
+            android: {
+                priority: "high",
+                notification: {
+                    click_action: "OPEN_ACTIVITY_1"
+                }
+              },
+            
+            token: registrationToken
+           
+    
+        };
         admin.messaging().send(message)
         .then((response) => {
             // Response is a message ID string.
@@ -70,6 +74,26 @@ router.post('/api_notification', (req, res) => {
             })
         });
     }else if(state =="multiple"){
+        const message = {
+        
+            notification: {
+                body: body,
+                title: title
+                //image: ace
+                
+            }
+            ,
+            android: {
+                priority: "high",
+                notification: {
+                    click_action: "OPEN_ACTIVITY_1"
+                }
+              },
+            
+            tokens: registrationToken
+           
+    
+        };
         admin.messaging().sendMulticast(message)
         .then((response) => {
             

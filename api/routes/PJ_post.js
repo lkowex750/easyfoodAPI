@@ -280,16 +280,16 @@ router.get("/mypost/:id", (req, res) => {
 
                                     let countLoop = 0
                                     let resultRecipeNew = new Array()
-                                    let dataScore =  new Array()
+                                    let dataScore = new Array()
                                     let count = []
                                     if (resultRecipe.length != 0) {
-                                        
+
                                         resultRecipe.forEach(element => {
                                             pool.query("SELECT AVG(pj_score.score) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAvg, field) => {
                                                 if (error) { res.json({ message: error }) }
                                                 else {
                                                     if (resultAvg[0].score != null) {
-                                                        let round = Math.round(resultAvg[0].score *100) / 100
+                                                        let round = Math.round(resultAvg[0].score * 100) / 100
                                                         //dataScore.push(resultAvg[0].score)
                                                         dataScore[countLoop] = round
                                                         count[countLoop] = resultAvg[0].count
@@ -299,8 +299,8 @@ router.get("/mypost/:id", (req, res) => {
                                                         count[countLoop] = 0
                                                     }
                                                     resultRecipeNew.push({
-                                                        
-                                                        
+
+
                                                         rid: element.rid,
                                                         recipe_name: element.recipe_name,
                                                         image: element.image,
@@ -308,7 +308,7 @@ router.get("/mypost/:id", (req, res) => {
                                                         price: element.price,
                                                         score: dataScore[countLoop],
                                                         count: count[countLoop]
-                                                        
+
                                                     })
                                                     resultRecipeNew.sort(function (a, b) {
                                                         // Turn your strings into dates, and then subtract them
@@ -316,7 +316,7 @@ router.get("/mypost/:id", (req, res) => {
                                                         return b.rid - a.rid;
                                                     });
                                                     countLoop++
-                                                    
+
                                                     if (countLoop == resultRecipe.length) {
                                                         let newData = {
                                                             user_ID: result[0].user_ID,
@@ -335,7 +335,7 @@ router.get("/mypost/:id", (req, res) => {
                                                     }
                                                 }
                                             })
-                                            
+
                                         });
 
                                     } else {
@@ -393,7 +393,7 @@ router.post("/editRecipePost", auth.verifyToken, (req, res) => {
         let body = req.body
         let uid = authData.user
 
-        pool.query("update pj_recipe set recipe_name = ? ,image = ? , date = now() ,price = ?,suitable_for = ?,take_time = ?,food_category = ?,description = ? where user_ID = ? and rid = ?", [body.recipe_name, body.image, body.price,body.suitable_for,body.take_time,body.food_category,body.description, uid, body.rid], (err, result, field) => {
+        pool.query("update pj_recipe set recipe_name = ? ,image = ? , date = now() ,price = ?,suitable_for = ?,take_time = ?,food_category = ?,description = ? where user_ID = ? and rid = ?", [body.recipe_name, body.image, body.price, body.suitable_for, body.take_time, body.food_category, body.description, uid, body.rid], (err, result, field) => {
             if (err) {
                 res.json({ message: err })
             }
@@ -430,11 +430,47 @@ router.post("/editHowto", auth.verifyToken, (req, res) => {
         let body = req.body
         //console.log(body.step)
         let loopCount = 0
+        let del = []
+        let take = []
+
         for (var i = 0; i < body.step.length; i++) {
+            
+            if (loopCount == 0) {
+                pool.query("SELECT `howto_ID` FROM `pj_howto` WHERE `rid` = ? ", [body.recipe_ID], (err, resultDel, field) => {
+                    if (resultDel != null || resultDel != []) {
+                        for (var j = 0; j < resultDel.length; j++) {
+                            take.push(resultDel[j].howto_ID)
+                        }
+
+                        for (var j = 0; j < resultDel.length; j++) {
+                            if (body.howto_ID.includes(take[j]) == false) {
+                                del.push(take[j])
+                            }
+                        }
+
+                        if (del.length > 0) {
+                            
+
+                            del.forEach(element => {
+                                pool.query("DELETE FROM `pj_howto` WHERE `howto_ID` = ? and `rid` = ?", [element, body.recipe_ID], (error, result, field) => {
+                                    if (error) { res.json({ message: error }) }
+                                    // res.json({
+                                    //     success: del
+                                    // })
+                                })
+                            });
+
+                        }
+
+                    }
+
+                })
+
+            }
 
             if (body.howto_ID[i] != null) {
                 //console.log("update")
-                if(body.status[i] == "update"){
+                
                     pool.query("UPDATE `pj_howto` SET `description`=?,`step`=?,`path_file`=?,`type_file`=? where `howto_ID` = ? AND `rid` = ?", [body.description[i], body.step[i], body.path_file[i], body.type_file[i], body.howto_ID[i], body.recipe_ID], (error, result, field) => {
                         if (err) {
                             res.json({
@@ -442,20 +478,10 @@ router.post("/editHowto", auth.verifyToken, (req, res) => {
                             })
                         }
                         //console.log(result)
-    
+
                     })
-                }else if(body.status[i] == "delete"){
-                    pool.query("DELETE FROM `pj_howto` WHERE `howto_ID` = ? and `rid` = ?", [body.howto_ID[i], body.recipe_ID], (error, result, field) => {
-                        if (err) {
-                            res.json({
-                                message: err
-                            })
-                        }
-                        //console.log(result)
-    
-                    })
-                }
-                
+                 
+
                 loopCount += 1
 
             } else {
@@ -490,20 +516,51 @@ router.post("/editIngredient", auth.verifyToken, (req, res) => {
         if (err) { res.json({ message: err }) }
         let body = req.body
         let countLoop = 0
+        let del = []
+        let take = []
         for (var i = 0; i < body.step.length; i++) {
+
+            if (countLoop == 0) {
+                pool.query("SELECT `ingredients_ID` FROM `pj_ingredients` WHERE `rid` = ? ", [body.recipe_ID], (err, resultDel, field) => {
+                    if (resultDel != null || resultDel != []) {
+                        for (var j = 0; j < resultDel.length; j++) {
+                            take.push(resultDel[j].ingredients_ID)
+                        }
+
+                        for (var j = 0; j < resultDel.length; j++) {
+                            if (body.ingredients_ID.includes(take[j]) == false) {
+                                del.push(take[j])
+                            }
+                        }
+
+                        if (del.length > 0) {
+
+                            del.forEach(element => {
+                                pool.query("DELETE FROM `pj_ingredients` WHERE `ingredients_ID` = ? and `rid` = ?", [element, body.recipe_ID], (error, result, field) => {
+                                    if (error) { res.json({ message: error }) }
+                                    // res.json({
+                                    //     success: del
+                                    // })
+                                })
+                            });
+
+                        }
+
+                    }
+
+                })
+
+            }
+
+
             if (body.ingredients_ID[i] != null) {
-                if(body.status[i] == "update"){
-                    pool.query("UPDATE `pj_ingredients` SET `ingredientName`=?,`amount`=?,`step`=? WHERE `ingredients_ID` = ? AND `rid` = ?", [body.ingredientName[i], body.amount[i], body.step[i], body.ingredients_ID[i], body.recipe_ID], (error, result, field) => {
-                        if (error) { res.json({ message: error }) }
-    
-                    })
-                }else if(body.status[i] == "delete"){
-                    pool.query("DELETE FROM `pj_ingredients` WHERE `ingredients_ID` = ? and `rid` = ?", [body.ingredients_ID[i], body.recipe_ID], (error, result, field) => {
-                        if (error) { res.json({ message: error }) }
-    
-                    })
-                }
-                
+
+                pool.query("UPDATE `pj_ingredients` SET `ingredientName`=?,`amount`=?,`step`=? WHERE `ingredients_ID` = ? AND `rid` = ?", [body.ingredientName[i], body.amount[i], body.step[i], body.ingredients_ID[i], body.recipe_ID], (error, result, field) => {
+                    if (error) { res.json({ message: error }) }
+
+                })
+
+
                 countLoop += 1
             } else {
 
@@ -516,7 +573,8 @@ router.post("/editIngredient", auth.verifyToken, (req, res) => {
 
             if (countLoop == body.step.length) {
                 return res.json({
-                    success: 1
+                    success: 1,
+
                 })
             }
         }
@@ -628,15 +686,15 @@ router.get("/newfeeds", auth.verifyToken, (req, res) => {
 
 router.get("/newfeedsglobal", (req, res) => {
     pool.query("SELECT pj_user.user_ID, pj_user.name_surname, pj_user.alias_name , pj_user.user_status,pj_user.access_status , pj_user.profile_image ,pj_recipe.rid ,pj_recipe.recipe_name, pj_recipe.image, pj_recipe.date, pj_recipe.price FROM pj_user,pj_recipe WHERE pj_user.user_ID = pj_recipe.user_ID  ORDER BY pj_recipe.rid DESC", (error, result, field) => {
-        if(result != null || result != ""){
+        if (result != null || result != "") {
             let newData = []
             let dataScore = []
             let count = []
             let countLoop = 0
-            result.forEach((element) =>{
-                pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?",[element.rid],(error,resultAVG,field) =>{
+            result.forEach((element) => {
+                pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ?", [element.rid], (error, resultAVG, field) => {
                     if (resultAVG[0].score != null) {
-                        let round = Math.round(resultAVG[0].score *100) / 100
+                        let round = Math.round(resultAVG[0].score * 100) / 100
                         dataScore.push(round)
                         count.push(resultAVG[0].count)
                     } else {
@@ -660,9 +718,9 @@ router.get("/newfeedsglobal", (req, res) => {
                         count: count[countLoop]
 
                     })
-                    countLoop ++
+                    countLoop++
 
-                    if(countLoop == result.length){
+                    if (countLoop == result.length) {
                         newData.sort(function (a, b) {
                             // Turn your strings into dates, and then subtract them
                             // to get a value that is either negative, positive, or zero.
@@ -704,7 +762,7 @@ router.get("/getPost/:rid", (req, res) => {
                                     pool.query("SELECT pj_user.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_comment.cid,pj_comment.recipe_ID,pj_comment.commentDetail,pj_comment.datetime FROM pj_user,pj_comment WHERE pj_user.user_ID = pj_comment.user_ID AND pj_comment.recipe_ID = ? ORDER BY pj_comment.datetime ASC", [rid], (error, resultsComm, filed) => {
                                         if (error) { res.json({ message: error }) }
                                         else {
-                                            let round = Math.round(resultScore[0].score *100) / 100
+                                            let round = Math.round(resultScore[0].score * 100) / 100
                                             let newData = {
                                                 rid: resultRecipe[0].rid,
                                                 user_ID: resultRecipe[0].user_ID,
@@ -1384,31 +1442,31 @@ router.get("/getAllReport", auth.verifyToken, (req, res) => {
 //free recipe
 //SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID AND pj_recipe.price = 0 ORDER BY pj_avg_score.avg_score DESC,pj_recipe.price
 
-router.get("/popular_recipe",(req,res) =>{
-    pool.query("SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.counts,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID ORDER BY pj_avg_score.avg_score DESC,pj_avg_score.counts",(err,results,field) =>{
-        if(results != ""){
+router.get("/popular_recipe", (req, res) => {
+    pool.query("SELECT pj_recipe.rid,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.date,pj_recipe.price,pj_recipe.user_ID,pj_user.name_surname,pj_user.alias_name,pj_user.profile_image,pj_avg_score.counts,pj_avg_score.avg_score FROM pj_recipe,pj_avg_score,pj_user WHERE pj_recipe.rid = pj_avg_score.recipe_ID AND pj_user.user_ID = pj_recipe.user_ID ORDER BY pj_avg_score.avg_score DESC,pj_avg_score.counts", (err, results, field) => {
+        if (results != "") {
             res.json(results)
-        }else{
+        } else {
             res.json([])
         }
     })
 })
 
-router.get("/popular_recipe_free",(req,res) =>{
-    pool.query("SELECT * FROM `pj_recipe_free`",(err,results,field) =>{
-        if(results != ""){
+router.get("/popular_recipe_free", (req, res) => {
+    pool.query("SELECT * FROM `pj_recipe_free`", (err, results, field) => {
+        if (results != "") {
             res.json(results)
-        }else{
+        } else {
             res.json([])
         }
     })
 })
 
-router.get("/popular_recipe_price",(req,res) =>{
-    pool.query("SELECT * FROM `pj_recipe_price`",(err,results,field) =>{
-        if(results != ""){
+router.get("/popular_recipe_price", (req, res) => {
+    pool.query("SELECT * FROM `pj_recipe_price`", (err, results, field) => {
+        if (results != "") {
             res.json(results)
-        }else{
+        } else {
             res.json([])
         }
     })
