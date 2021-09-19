@@ -701,7 +701,7 @@ router.post("/topup", async (req, res) => {
                                 axios.post(pathHttp + 'pjUsers/insert_his_topup', {
                                     t_token: charge.id,
                                     status: charge.status,
-                                    amount: charge.amount/100,
+                                    amount: charge.amount / 100,
                                     brand: charge.card.brand
                                 }, {
                                     headers: {
@@ -742,7 +742,7 @@ router.post("/topup", async (req, res) => {
 
 router.post("/insert_his_topup", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (error, authData) => {
-        if(error){
+        if (error) {
             console.log("failed!!")
         }
         let uid = authData.user
@@ -751,8 +751,8 @@ router.post("/insert_his_topup", auth.verifyToken, (req, res) => {
         // console.log(body.t_token +".......................")
         // console.log(body.status +".......................")
         // console.log(body.amount +".......................")
-        
-        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`,`brand`,`datetime`) VALUES (?, ?, ?, ?,?,now())", [body.t_token, body.status, body.amount, uid,body.brand], (err, result, field) => {
+
+        pool.query("INSERT INTO `pj_his_topup` (`t_token`, `status`, `amount`, `user_ID`,`brand`,`datetime`) VALUES (?, ?, ?, ?,?,now())", [body.t_token, body.status, body.amount, uid, body.brand], (err, result, field) => {
             console.log(result)
             console.log(err)
             if (result.affectedRows == 1) {
@@ -822,12 +822,12 @@ router.post("/withdraw", (req, res) => {
 
                                                     console.log(transfers.bank_account.brand)
                                                     console.log(transfers.bank_account.name)
-                                                    console.log("******"+transfers.bank_account.last_digits)
+                                                    console.log("******" + transfers.bank_account.last_digits)
                                                     let brand = transfers.bank_account.brand
                                                     let bname = transfers.bank_account.name
-                                                    let last_digits = "******"+transfers.bank_account.last_digits
+                                                    let last_digits = "******" + transfers.bank_account.last_digits
                                                     let statusT = "request"
-                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID,brand,name,last_digits,datetime) VALUES(?,?,?,?,?,?,?,now())", [transfers.id, statusT, body.amount, uid,brand,bname,last_digits], (error, result, field) => {
+                                                    pool.query("INSERT INTO pj_his_withdraw (w_token,status,amount,user_ID,brand,name,last_digits,datetime) VALUES(?,?,?,?,?,?,?,now())", [transfers.id, statusT, body.amount, uid, brand, bname, last_digits], (error, result, field) => {
                                                         if (result.affectedRows == 1) {
                                                             res.json({
                                                                 success: 1,
@@ -853,7 +853,7 @@ router.post("/withdraw", (req, res) => {
                             }
                         });
                     } else {
-                        res.json({ status: "failed", message: "you don't have transaction!" ,data:resultT.length})
+                        res.json({ status: "failed", message: "you don't have transaction!", data: resultT.length })
                     }
                 }
             })
@@ -936,8 +936,8 @@ router.post("/webhooks", async (req, res) => {
                     let status = "successful"
                     //console.log(status)
                     pool.query("UPDATE `pj_his_topup` SET `status` = ? where `t_token` = ?", [status, data.source.id])
-                    pool.query("select user_ID from pj_his_topup where t_token = ?",[data.source.id],(err,result2,field) =>{
-                        
+                    pool.query("select user_ID from pj_his_topup where t_token = ?", [data.source.id], (err, result2, field) => {
+
                         axios.post(pathHttp + 'pjUsers/createTokenUser', {
                             user_ID: result2[0].user_ID
                         }).then(function (response) {
@@ -949,7 +949,7 @@ router.post("/webhooks", async (req, res) => {
                                 headers: {
                                     'Authorization': 'Bearer ' + response.data.token
                                 }
-    
+
                             })
                         })
                     })
@@ -1037,7 +1037,7 @@ router.get("/my_his_topup", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
 
-        pool.query("SELECT `tid`, `t_token`, `status`, `amount`, `user_ID`,`brand`,`datetime` FROM `pj_his_topup` WHERE `user_ID` = ? ORDER BY `tid` DESC", [uid], (err, results, field) => {
+        pool.query("SELECT `tid`, `t_token`, `status`, `amount`, `user_ID`,`brand`,CONVERT_TZ(`datetime`, '+00:00', '+07:00') as datetime FROM `pj_his_topup` WHERE `user_ID` = ? ORDER BY `tid` DESC", [uid], (err, results, field) => {
             if (results != "" || results != null) {
                 res.json(results)
             } else {
@@ -1183,37 +1183,47 @@ const transporter = nodemailer.createTransport({
 
 //https://accounts.google.com/DisplayUnlockCaptcha
 
+
+
 router.post("/reset_password", (req, res) => {
     let body = req.body
-    var mailOption = {
-        from: 'EasyCook 🍔<no-reply@easycook.co.th>',
-        to: body.email,
-        subject: 'แจ้งเตือนการขอรีเซ็ตรหัสผ่านในแอปพลิชัน Easy Cook 🍔',
+    console.log(body.token)
+    axios.post(pathHttp + 'pjUsers/createTokenByEmail', {
+        email: body.email
+    }).then(function (response) {
 
-        html: '<h1> Reset Password </h1><a href="https://easyfood.comsciproject.com">Click here for reset password</a>'
-    }
+        var mailOption = {
+            from: 'EasyCook 🍔<no-reply@easycook.co.th>',
+            to: body.email,
+            subject: 'แจ้งเตือนการขอรีเซ็ตรหัสผ่านในแอปพลิชัน Easy Cook 🍔',
 
-    transporter.sendMail(mailOption, function (error, info) {
-        if (error) {
-            res.json({
-                success: 0,
-                message: error
-            })
-        } else {
-            //console.log('email sent: '+ info.response)
-            res.json({
-                success: 1,
-                message: "sent email successs"
-            })
+            html: '<h1> Reset Password </h1><a href="https://easyfood.comsciproject.com/reset/' + response.data.token + '">Click here for reset password</a>'
         }
+
+        transporter.sendMail(mailOption, function (error, info) {
+            if (error) {
+                res.json({
+                    success: 0,
+                    message: error
+                })
+            } else {
+                //console.log('email sent: '+ info.response)
+                res.json({
+                    success: 1,
+                    message: "sent email successs"
+                })
+            }
+        })
+
     })
+
 })
 
 router.post("/topup_qr", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
-        
-        var amount = req.body.amount*100;
+
+        var amount = req.body.amount * 100;
         var currency = 'thb';
         var source = {
             'type': 'promptpay',
@@ -1230,28 +1240,28 @@ router.post("/topup_qr", auth.verifyToken, (req, res) => {
             });
         }).then(function (charge) {
             console.log("Charge !!")
-            
+
 
             axios.post(pathHttp + 'pjUsers/insert_his_topup', {
-                                    t_token: charge.source.id,
-                                    status: charge.status,
-                                    amount: charge.amount/100,
-                                    brand: "Promptpay"
-                                }, {
-                                    headers: {
-                                        'Authorization': 'Bearer ' + req.token
-                                    }
-                                }).then(function(response) {
-                                    // console.log("5555555555555")
-                                    // console.log(charge.source.scannable_code);
-                                    res.json({
-                                        filename: charge.source.scannable_code.image.filename,
-                                        qr__code: charge.source.scannable_code.image.download_uri
-                                        
-                                    })
-                                })
-            
-                                
+                t_token: charge.source.id,
+                status: charge.status,
+                amount: charge.amount / 100,
+                brand: "Promptpay"
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + req.token
+                }
+            }).then(function (response) {
+                // console.log("5555555555555")
+                // console.log(charge.source.scannable_code);
+                res.json({
+                    filename: charge.source.scannable_code.image.filename,
+                    qr__code: charge.source.scannable_code.image.download_uri
+
+                })
+            })
+
+
 
             //console.log(charge);
         }).catch(function (err) {
@@ -1261,20 +1271,53 @@ router.post("/topup_qr", auth.verifyToken, (req, res) => {
 
 })
 
-router.post("/updateWallpaper",auth.verifyToken,(req,res) =>{
-    jwt.verify(req.token,key,(err,authData) =>{
+router.post("/updateWallpaper", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
 
         let body = req.body
 
-        pool.query("update pj_user  set wallpaper = ? where user_ID = ?",[body.wallpaperName,uid],(error,result,filed) =>{
+        pool.query("update pj_user  set wallpaper = ? where user_ID = ?", [body.wallpaperName, uid], (error, result, filed) => {
             if (result.affectedRows == 1) {
                 res.json({
                     success: 1
-                    
+
                 })
             }
         })
+    })
+})
+
+router.post("/newPassword", auth.verifyToken, (req, res) => {
+    jwt.verify(req.token, key, (err, authData) => {
+        let uid = authData.user
+        let body = req.body
+        body.password = passwordHash.generate(body.password)
+
+        pool.query("update pj_user set password = ? where user_ID = ?", [body.password, uid], (error, result, filed) => {
+            if (result.affectedRows == 1) {
+                res.json({
+                    success: 1
+
+                })
+            }
+        })
+    })
+})
+
+router.post("/createTokenByEmail", (req, res) => {
+    let body = req.body
+
+    pool.query("select * from pj_user where email = ?", [body.email], (err, result, field) => {
+        if (result != null || result != []) {
+            jwt.sign({ user: result[0].user_ID }, key, (err, token) => {
+                res.json({
+                    token: token
+                })
+            })
+        } else {
+            res.json([])
+        }
     })
 })
 

@@ -1214,7 +1214,10 @@ router.get("/recommendRecipe", (req, res) => {
         arr_rid.forEach(element => {
             pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ? ", [element], (error, resultAvg, field) => {
                 if (resultAvg[0].score != null) {
-                    newData.push(resultAvg[0].score)
+                    // let round = Math.round(resultAVG[0].score * 100) / 100
+                    // newData.push(round)
+                    let round = Math.round(resultAvg[0].score * 100) /100
+                    newData.push(round)
                     count.push(resultAvg[0].count)
                 } else {
                     newData.push(0)
