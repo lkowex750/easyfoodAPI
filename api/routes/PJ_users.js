@@ -1290,18 +1290,23 @@ router.post("/updateWallpaper", auth.verifyToken, (req, res) => {
 
 router.post("/newPassword", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
+        if(err){res.json({success: 0,message: err})}
         let uid = authData.user
         let body = req.body
         body.password = passwordHash.generate(body.password)
-
-        pool.query("update pj_user set password = ? where user_ID = ?", [body.password, uid], (error, result, filed) => {
-            if (result.affectedRows == 1) {
-                res.json({
-                    success: 1
-
+        pool.query("select count('user_ID') as count from pj_user where user_ID = ?",[uid],(error,resultCount,field) =>{
+            if(resultCount[0].count == 1){
+                pool.query("update pj_user set password = ? where user_ID = ?", [body.password, uid], (error, result, filed) => {
+                    if (result.affectedRows == 1) {
+                        res.json({
+                            success: 1
+        
+                        })
+                    }
                 })
             }
         })
+        
     })
 })
 
