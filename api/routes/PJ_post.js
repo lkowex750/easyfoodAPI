@@ -895,7 +895,8 @@ router.get("/searchRecipeName/:name", (req, res) => {
                 else {
 
                     if (resutlsScore[0].AVGscore != null) {
-                        data.push(resutlsScore[0].AVGscore)
+                        let round = Math.round(resutlsScore[0].AVGscore * 100) /100
+                        data.push(round)
                         count.push(resutlsScore[0].count)
                     } else {
                         data.push(0)
@@ -995,7 +996,8 @@ router.get("/searchWithCategory/:name", (req, res) => {
                         if (error) { res.json({ message: error }) }
                         else {
                             if (score1[0].score != null) {
-                                dataScore.push(score1[0].score)
+                                let round = Math.round(score1[0].score * 100) /100
+                                dataScore.push(round)
                                 count.push(score1[0].count)
                             } else {
                                 dataScore.push(0)
