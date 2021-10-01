@@ -1023,7 +1023,7 @@ router.get("/my_his_withdraw", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
         let uid = authData.user
 
-        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID`, `brand`, `name`, `last_digits`,`datetime` FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
+        pool.query("SELECT `wid`, `w_token`, `status`, `amount`, `user_ID`, `brand`, `name`, `last_digits`, CONVERT_TZ(`datetime`, '+00:00', '+07:00') as datetime FROM `pj_his_withdraw` WHERE `user_ID` = ? ORDER BY `wid` DESC", [uid], (err, results, field) => {
             if (results != "" || results != null) {
                 res.json(results)
             } else {
