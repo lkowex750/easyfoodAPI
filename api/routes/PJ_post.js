@@ -1207,37 +1207,45 @@ router.get("/recommendRecipe", (req, res) => {
 
     pool.query("SELECT pj_recipe.rid ,pj_recipe.recipe_name,pj_recipe.image,pj_recipe.price,pj_recipe.food_category,pj_user.user_ID, pj_user.name_surname,pj_user.alias_name,pj_user.profile_image FROM pj_recipe,pj_user WHERE  pj_user.user_ID = pj_recipe.user_ID  ORDER BY RAND() LIMIT 20 ", (error, result, field) => {
         let arr_rid = new Array()
-
-        result.forEach(element => {
-            arr_rid.push(element.rid)
-        })
+        //let i= 0
+        // result.forEach(element => {
+        //     arr_rid[i] = element.rid
+        //     i++
+        //     //arr_rid.push(element.rid)
+        // })
         let newData = new Array()
         let count = []
         let countLoop = 0
         let dataRecipe = new Array()
-        arr_rid.forEach(element => {
-            pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ? ", [element], (error, resultAvg, field) => {
+        let j = 0
+        result.forEach(element => {
+            pool.query("SELECT AVG(`score`) as score , COUNT(score_ID) as count FROM `pj_score` WHERE `recipe_ID` = ? ", [element.rid], (error, resultAvg, field) => {
                 if (resultAvg[0].score != null) {
                     // let round = Math.round(resultAVG[0].score * 100) / 100
                     // newData.push(round)
                     let round = Math.round(resultAvg[0].score * 100) /100
+                    // newData[j] = round
+                    // count[j] = resultAvg[0].count
                     newData.push(round)
                     count.push(resultAvg[0].count)
                 } else {
+                    // newData[j] = 0
+                    // count[j] = 0
                     newData.push(0)
                     count.push(0)
                 }
+                //j++
 
                 dataRecipe.push({
-                    rid: result[countLoop].rid,
-                    user_ID: result[countLoop].user_ID,
-                    name_surname: result[countLoop].name_surname,
-                    alias_name: result[countLoop].alias_name,
-                    profile_image: result[countLoop].profile_image,
-                    recipe_name: result[countLoop].recipe_name,
-                    food_category: result[countLoop].food_category,
-                    image: result[countLoop].image,
-                    price: result[countLoop].price,
+                    rid: element.rid,
+                    user_ID: element.user_ID,
+                    name_surname: element.name_surname,
+                    alias_name: element.alias_name,
+                    profile_image: element.profile_image,
+                    recipe_name: element.recipe_name,
+                    food_category: element.food_category,
+                    image: element.image,
+                    price: element.price,
                     score: newData[countLoop],
                     count: count[countLoop]
                 })
