@@ -1191,6 +1191,12 @@ router.post("/reset_password", (req, res) => {
     axios.post(pathHttp + 'pjUsers/createTokenByEmail', {
         email: body.email
     }).then(function (response) {
+        if(response.data.data == 0){
+            res.json({
+                success: 0,
+                message:  "ไม่มี E-mail นี้ในระบบ"
+            })
+        }
 
         var mailOption = {
             from: 'EasyCook 🍔<no-reply@easycook.co.th>',
@@ -1313,16 +1319,20 @@ router.post("/newPassword", auth.verifyToken, (req, res) => {
 router.post("/createTokenByEmail", (req, res) => {
     let body = req.body
 
-    pool.query("select * from pj_user where email = ?", [body.email], (err, result, field) => {
-        if (result != null || result != []) {
+    pool.query("select *,count(user_ID) as count from pj_user where email = ?", [body.email], (err, result, field) => {
+        if (result[0].count != 0) {
             jwt.sign({ user: result[0].user_ID }, key, (err, token) => {
                 res.json({
                     token: token
                 })
             })
         } else {
-            res.json([])
+            res.json({
+                data: 0
+            })
         }
+        
+        
     })
 })
 
