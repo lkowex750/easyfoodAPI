@@ -1411,11 +1411,12 @@ router.post("/deleteReport", auth.verifyToken, (req, res) => {
 
 router.get("/getAllReport", auth.verifyToken, (req, res) => {
     jwt.verify(req.token, key, (err, authData) => {
-        pool.query("select pj_report.report_ID,pj_report.userTarget_ID,pj_report.userReport_ID,pj_report.datetime,pj_report.type_report,pj_report.title,pj_user.name_surname as name_userReport from pj_report,pj_user where pj_user.user_ID = pj_report.userReport_ID ", (error, result, field) => {
+        pool.query("select pj_report.report_ID,pj_report.userTarget_ID,pj_report.userReport_ID,CONVERT_TZ(pj_report.datetime, '+00:00', '+07:00') as datetime,pj_report.type_report,pj_report.title,pj_user.name_surname as name_userReport from pj_report,pj_user where pj_user.user_ID = pj_report.userReport_ID ", (error, result, field) => {
 
             let newData = new Array()
             let countLoop = 0
-
+            //CONVERT_TZ(`datetime`, '+00:00', '+07:00') as datetime
+            //pj_report.datetime
             if (result != "" || result == null) {
                 result.forEach(element => {
                     //console.log(element.userTarget_ID)
